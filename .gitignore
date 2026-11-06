@@ -1,0 +1,14 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+
+# sistema
+.DS_Store
+Thumbs.db
+
+# material interno do instrutor
+specs/
+
+# a landing descompactada: o repositório distribui só o landing_2025.zip
+landing/

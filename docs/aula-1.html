@@ -1,0 +1,1716 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lakehouse Sísmico</title>
+<meta name="description" content="Aula 1: o Databricks por dentro — lakehouse, Delta Lake e Unity Catalog no Free Edition.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#eef1ee;
+  --surface:#f7f9f7;
+  --sunken:#e4e9e5;
+  --ink:#10171a;
+  --ink-2:#39474a;
+  --ink-3:#6b7b7c;
+  --line:#cdd6cf;
+  --accent:#1a6b52;
+  --accent-soft:#dcebe3;
+  --amber:#a86e05;
+  --amber-soft:#f6ebd2;
+  --danger:#9b3a25;
+  --code-bg:#12191c;
+  --code-ink:#dce7e0;
+  --shadow:0 1px 2px rgba(16,23,26,.06),0 8px 24px -16px rgba(16,23,26,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1214;
+    --surface:#141c1f;
+    --sunken:#1b2529;
+    --ink:#e7eee9;
+    --ink-2:#b2c0ba;
+    --ink-3:#7d8d88;
+    --line:#2a383c;
+    --accent:#4fbf94;
+    --accent-soft:#12302a;
+    --amber:#e0a800;
+    --amber-soft:#2e2510;
+    --danger:#e0805f;
+    --code-bg:#080d0f;
+    --code-ink:#cfded6;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1214;
+  --surface:#141c1f;
+  --sunken:#1b2529;
+  --ink:#e7eee9;
+  --ink-2:#b2c0ba;
+  --ink-3:#7d8d88;
+  --line:#2a383c;
+  --accent:#4fbf94;
+  --accent-soft:#12302a;
+  --amber:#e0a800;
+  --amber-soft:#2e2510;
+  --danger:#e0805f;
+  --code-bg:#080d0f;
+  --code-ink:#cfded6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,.ui{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+code,kbd,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+a{color:var(--accent)}
+
+/* ---------- shell ---------- */
+.shell{
+  display:grid;
+  grid-template-columns:262px minmax(0,1fr);
+  gap:44px;
+  max-width:1180px;
+  margin:0 auto;
+  padding-inline:20px;
+  padding-block:0 72px;
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+}
+
+/* ---------- sidebar ---------- */
+.side{
+  position:sticky;
+  top:0;
+  align-self:start;
+  max-height:100vh;
+  overflow-y:auto;
+  padding-block:28px 32px;
+  font-family:Archivo,sans-serif;
+  font-size:13.5px;
+}
+@media (max-width:900px){
+  .side{position:static;max-height:none;border-bottom:1px solid var(--line);margin-bottom:8px}
+}
+.side .brand{
+  font-weight:700;letter-spacing:-.01em;font-size:15px;color:var(--ink);
+  display:flex;align-items:center;gap:8px;margin-bottom:18px;
+}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+.prog-wrap{margin-bottom:20px}
+.prog-label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px;
+}
+.prog-label b{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--accent);font-variant-numeric:tabular-nums}
+.prog-track{height:4px;background:var(--sunken);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;width:0;background:var(--accent);transition:width .35s ease}
+nav ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav a{
+  display:flex;gap:9px;align-items:baseline;
+  text-decoration:none;color:var(--ink-2);
+  padding:5px 8px;border-radius:5px;line-height:1.35;
+}
+nav a:hover{background:var(--sunken);color:var(--ink)}
+nav a .n{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-3);flex:none;width:18px}
+.side-foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:8px}
+.tbtn{
+  font-family:Archivo,sans-serif;font-size:12px;
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;
+}
+.tbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+/* ---------- main ---------- */
+main{padding-block:28px 0;min-width:0}
+.wrap{max-width:68ch}
+
+/* hero */
+.eyebrow{
+  font-family:Archivo,sans-serif;font-size:11.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 14px;
+}
+h1{
+  font-size:clamp(34px,5.2vw,50px);font-weight:700;letter-spacing:-.025em;
+  line-height:1.04;margin:0 0 18px;text-wrap:balance;
+}
+.lede{font-size:20px;line-height:1.55;color:var(--ink-2);margin:0 0 26px;text-wrap:pretty}
+.facts{
+  display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);overflow:hidden;margin-bottom:40px;
+}
+.fact{flex:1 1 130px;padding:13px 16px;border-right:1px solid var(--line)}
+.fact:last-child{border-right:0}
+@media (max-width:560px){.fact{flex:1 1 50%;border-bottom:1px solid var(--line)}}
+.fact dt{
+  font-family:Archivo,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 3px;
+}
+.fact dd{margin:0;font-family:Archivo,sans-serif;font-weight:600;font-size:15px;color:var(--ink)}
+
+/* sections */
+section{padding-block:34px 0;scroll-margin-top:16px}
+h2{
+  font-size:13px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 6px;
+}
+.h2big{
+  font-family:Archivo,sans-serif;font-size:clamp(24px,3.4vw,31px);font-weight:700;
+  letter-spacing:-.02em;line-height:1.15;margin:0 0 16px;color:var(--ink);text-wrap:balance;
+}
+h3{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:26px 0 8px}
+p{margin:0 0 15px}
+ul,ol.body{padding-left:20px;margin:0 0 15px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+.small{font-size:15px;color:var(--ink-2)}
+
+/* pipeline diagram */
+.pipe{
+  display:flex;flex-direction:column;gap:0;margin:0 0 12px;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:20px;box-shadow:var(--shadow);
+}
+.layer{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+@media (max-width:520px){.layer{grid-template-columns:minmax(0,1fr);gap:4px}}
+.layer .tag{
+  font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+  padding:5px 8px;border-radius:5px;text-align:center;
+  background:var(--sunken);color:var(--ink-2);
+}
+.layer.l-raw .tag{background:var(--sunken);color:var(--ink-2)}
+.layer.l-ref .tag{background:var(--amber-soft);color:var(--amber)}
+.layer.l-mart .tag{background:var(--accent-soft);color:var(--accent)}
+.layer .desc{font-size:15px;color:var(--ink-2)}
+.layer .desc b{color:var(--ink);font-family:Archivo,sans-serif;font-weight:600}
+.arrow{
+  display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;
+  padding:7px 0;align-items:center;
+}
+@media (max-width:520px){.arrow{grid-template-columns:minmax(0,1fr)}.arrow .stem{display:none}}
+.arrow .stem{display:flex;justify-content:center;color:var(--ink-3);font-size:14px;line-height:1}
+.arrow .what{
+  font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-3);
+}
+.arrow .what em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* steps */
+.step{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:22px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.step.done{border-color:var(--accent);background:var(--surface)}
+.step-head{display:flex;gap:13px;align-items:flex-start;margin-bottom:4px}
+.step-n{
+  font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+  background:var(--amber-soft);color:var(--amber);
+  border-radius:6px;padding:4px 8px;flex:none;margin-top:3px;
+}
+.step.done .step-n{background:var(--accent-soft);color:var(--accent)}
+.step-title{font-family:Archivo,sans-serif;font-weight:600;font-size:20px;letter-spacing:-.01em;margin:0;line-height:1.25}
+.step-sub{font-size:14.5px;color:var(--ink-3);margin:2px 0 0;font-family:Archivo,sans-serif}
+.step-body{margin-top:14px}
+.step-body > :last-child{margin-bottom:0}
+
+/* figura / diagrama */
+.fig{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:22px 20px 16px;margin:0 0 14px;box-shadow:var(--shadow);
+}
+.fig svg{display:block;width:100%;height:auto}
+.fig-scroll{overflow-x:auto;padding-bottom:4px}
+.fig-scroll svg{min-width:660px}
+.fig-cap{
+  font-size:13.5px;color:var(--ink-3);margin:14px 0 0;text-align:center;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+
+/* duas colunas comparativas */
+.versus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 16px}
+@media (max-width:620px){.versus{grid-template-columns:minmax(0,1fr)}}
+.vs-card{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:18px 20px;
+}
+.vs-card.bad{border-color:var(--danger)}
+.vs-card.good{border-color:var(--accent)}
+.vs-h{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;margin:0 0 10px;
+}
+.vs-card.bad .vs-h{color:var(--danger)}
+.vs-card.good .vs-h{color:var(--accent)}
+.vs-flow{
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink-2);
+  margin:0 0 12px;line-height:1.9;
+}
+.vs-card p{font-size:15px;color:var(--ink-2)}
+.vs-card p:last-child{margin-bottom:0}
+
+/* spec */
+.spec{
+  border:1px solid var(--line);border-radius:12px;background:var(--sunken);
+  padding:20px 22px;margin-bottom:16px;
+}
+.spec-h{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--amber);margin:0 0 10px;
+}
+.spec ol{margin-bottom:0}
+.spec li{margin-bottom:10px;font-size:15.5px}
+.spec li:last-child{margin-bottom:0}
+.spec-foot{
+  font-size:14.5px;color:var(--ink-3);margin:14px 0 0;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+
+/* spec colapsavel */
+details.spec-det{padding:0;margin-bottom:16px}
+details.spec-det > summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  margin:0;padding:16px 22px;
+}
+details.spec-det > summary::-webkit-details-marker{display:none}
+details.spec-det > summary::before{
+  content:"";width:0;height:0;flex:none;
+  border-left:5px solid currentColor;border-top:4px solid transparent;
+  border-bottom:4px solid transparent;transition:transform .15s ease;
+}
+details.spec-det[open] > summary::before{transform:rotate(90deg)}
+details.spec-det > summary:hover{background:var(--line);border-radius:12px}
+details.spec-det[open] > summary:hover{border-radius:12px 12px 0 0}
+.spec-cue{
+  margin-left:auto;font-size:10px;letter-spacing:.09em;color:var(--ink-3);
+}
+.spec-cue::after{content:"abrir"}
+details.spec-det[open] .spec-cue::after{content:"fechar"}
+details.spec-det > :not(summary){margin-left:22px;margin-right:22px}
+details.spec-det > :last-child{margin-bottom:20px}
+
+/* code */
+pre{
+  background:var(--code-bg);color:var(--code-ink);
+  border-radius:8px;padding:13px 15px;overflow-x:auto;
+  font-size:13.5px;line-height:1.6;margin:0 0 14px;
+}
+pre .c{color:#7d8d88}
+pre .ok{color:#4fbf94}
+code:not(pre code){
+  background:var(--sunken);border-radius:4px;padding:1px 5px;font-size:.87em;color:var(--ink);
+}
+.cmdlabel{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 6px;
+}
+.codewrap{position:relative}
+.copy{
+  position:absolute;top:8px;right:8px;
+  font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.04em;
+  background:rgba(255,255,255,.08);color:#cfded6;
+  border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:3px 8px;cursor:pointer;
+}
+.copy:hover{background:rgba(255,255,255,.16)}
+
+/* verify block */
+.verify{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  border-radius:0 8px 8px 0;padding:12px 15px;margin:0 0 14px;
+}
+.verify .vh{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 6px;
+}
+.verify p,.verify ul{margin-bottom:0;font-size:15px}
+.note{
+  border-left:3px solid var(--amber);background:var(--amber-soft);
+  border-radius:0 8px 8px 0;padding:12px 15px;margin:0 0 14px;font-size:15px;
+}
+.note b{font-family:Archivo,sans-serif}
+.note > :last-child{margin-bottom:0}
+
+/* checkbox */
+.mark{
+  display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--line);
+  font-family:Archivo,sans-serif;font-size:14px;color:var(--ink-3);cursor:pointer;user-select:none;
+}
+.mark input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:none}
+.step.done .mark{color:var(--accent);font-weight:600}
+
+/* aulas */
+.aulas{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+.aula{
+  display:grid;grid-template-columns:62px minmax(0,1fr);gap:16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px;
+}
+@media (max-width:560px){.aula{grid-template-columns:minmax(0,1fr);gap:8px}}
+.aula .when{
+  font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-3);
+  border-right:1px solid var(--line);padding-right:12px;
+}
+@media (max-width:560px){.aula .when{border-right:0;padding-right:0}}
+.aula .when b{display:block;font-size:22px;color:var(--amber);line-height:1.1;font-weight:600}
+.aula h3{margin:0 0 6px;font-size:18px}
+.aula p{font-size:15px;margin-bottom:10px;color:var(--ink-2)}
+.chal{
+  font-size:14.5px;background:var(--sunken);border-radius:7px;padding:9px 12px;color:var(--ink-2);
+}
+.chal b{font-family:Archivo,sans-serif;color:var(--ink);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+
+/* desafios */
+[hidden]{display:none!important}
+.embreve{
+  border:1px dashed var(--line);border-radius:12px;background:var(--sunken);
+  padding:16px 20px;margin:0 0 16px;font-size:15px;color:var(--ink-3);
+}
+.embreve b{font-family:Archivo,sans-serif;color:var(--ink-2)}
+.desafios{display:flex;flex-direction:column;gap:12px}
+.desafio{
+  display:grid;grid-template-columns:76px minmax(0,1fr);gap:18px;
+  border:1px solid var(--line);border-left:3px solid var(--amber);
+  border-radius:0 12px 12px 0;background:var(--surface);padding:18px 20px;
+}
+@media (max-width:560px){.desafio{grid-template-columns:minmax(0,1fr);gap:6px}}
+.desafio .de-n{
+  font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.desafio .de-n b{display:block;font-size:21px;color:var(--amber);line-height:1.1;letter-spacing:0}
+.desafio h3{margin:0 0 6px;font-size:17px}
+.desafio p{font-size:15.5px;margin-bottom:0;color:var(--ink-2)}
+.desafio p + p{margin-top:8px}
+.desafio .entrega-ex{
+  font-size:13px;color:var(--ink-3);margin-top:8px;
+}
+.desafio .entrega-ex code{font-size:12.5px;line-height:1.7}
+.desafio .entrega{
+  font-family:Archivo,sans-serif;font-size:13px;color:var(--ink-3);
+  margin-top:9px;padding-top:9px;border-top:1px solid var(--line);
+}
+
+/* clock bar */
+.clock{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:6px 0 14px;font-family:Archivo,sans-serif;font-size:11px}
+.clock span{display:flex;align-items:center;justify-content:center;color:#fff;white-space:nowrap;overflow:hidden}
+.c1{background:var(--ink-3)}
+.c2{background:var(--accent)}
+.c3{background:var(--amber)}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:0 0 16px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:0}
+th{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);background:var(--sunken);
+}
+td.num{text-align:right;font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+td.term{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);white-space:nowrap}
+
+details{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:12px 16px;margin-bottom:9px}
+summary{font-family:Archivo,sans-serif;font-weight:600;font-size:16px;cursor:pointer;color:var(--ink)}
+summary::marker{color:var(--ink-3)}
+details[open] summary{margin-bottom:9px}
+details p:last-child{margin-bottom:0}
+
+footer{
+  margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
+  font-family:Archivo,sans-serif;font-size:13px;color:var(--ink-3);
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- extras: lakehouse ---------- */
+.layer.l-bronze .tag{background:var(--surface);color:var(--ink-2);border:1px solid var(--line)}
+.vs-card .vs-tag{font-family:"JetBrains Mono",monospace;font-size:34px;font-weight:600;letter-spacing:.04em;line-height:1;margin:0 0 4px}
+.vs-card.bad .vs-tag{color:var(--danger)}
+.vs-card.good .vs-tag{color:var(--accent)}
+.vs-card .vs-tag-sub{font-family:Archivo,sans-serif;font-size:12.5px;letter-spacing:.06em;color:var(--ink-3);margin:0 0 12px}
+.ia-err td:first-child{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--danger);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<aside class="side">
+  <div class="brand"><span class="dot"></span>Lakehouse Sísmico</div>
+
+  <div class="prog-wrap">
+    <div class="prog-label"><span>Seu progresso</span><b id="pct">0/5</b></div>
+    <div class="prog-track"><div class="prog-fill" id="fill"></div></div>
+  </div>
+
+  <nav>
+    <ol>
+      <li><a href="#construir"><span class="n">00</span>O que vamos construir</a></li>
+      <li><a href="#evolucao"><span class="n">01</span>A evolução da engenharia de dados</a></li>
+      <li><a href="#databricks"><span class="n">02</span>O que é o Databricks</a></li>
+      <li><a href="#pratica-conta"><span class="n">&middot;</span>Prática: criar a conta</a></li>
+      <li><a href="#lakehouse"><span class="n">03</span>Lakehouse e Delta Lake</a></li>
+      <li><a href="#pratica-delta"><span class="n">&middot;</span>Prática: tabela com memória</a></li>
+      <li><a href="#uc"><span class="n">04</span>Unity Catalog</a></li>
+      <li><a href="#pratica-catalogo"><span class="n">&middot;</span>Prática: criar o catálogo</a></li>
+      <li><a href="#vocab"><span class="n">05</span>Vocabulário</a></li>
+      <li><a href="#encontros"><span class="n">06</span>Os quatro encontros</a></li>
+      <li><a href="#api"><span class="n">07</span>Testar a API da aula 2</a></li>
+      <!-- OCULTO: liberar com as aulas seguintes
+      <li><a href="#e1"><span class="n">08</span>Aula 2 · API e Bronze</a></li>
+      <li><a href="#e2"><span class="n">09</span>Aula 3 · Silver e Gold</a></li>
+      <li><a href="#e3"><span class="n">10</span>Aula 4 · Governança e Job</a></li>
+      <li><a href="#desafios"><span class="n">11</span>Desafios</a></li>
+      <li><a href="#contagens"><span class="n">A0</span>Contagens esperadas</a></li>
+      -->
+      <li><a href="#erros"><span class="n">A1</span>Quando quebrar</a></li>
+      <li><a href="#comandos"><span class="n">A2</span>Caminhos e comandos</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="tbtn" id="theme" type="button">Tema</button>
+    <button class="tbtn" id="reset" type="button">Zerar progresso</button>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+  <p class="eyebrow">Trilha Engenheiro de Dados Pleno &middot; Aula 1 de 4 &middot; 11/11</p>
+  <h1>Da API ao Lakehouse, no Databricks, sem pagar nada</h1>
+  <p class="lede">Você já sabe ler um arquivo, limpar e agregar. Agora vai fazer isso do jeito que as vagas de pleno cobram: dado vindo de uma API de verdade, camadas Bronze, Silver e Gold em Delta Lake, governança no Unity Catalog e um Job que roda sozinho todo dia. Tudo no Databricks Free Edition, sem cartão de crédito.</p>
+
+  <dl class="facts">
+    <div class="fact"><dt>Fonte</dt><dd>USGS &middot; API FDSN</dd></div>
+    <div class="fact"><dt>Recorte</dt><dd>2025 &middot; magnitude &ge; 2,5</dd></div>
+    <div class="fact"><dt>Registros</dt><dd class="mono">29.265 eventos</dd></div>
+    <div class="fact"><dt>Entrega</dt><dd>Job agendado</dd></div>
+  </dl>
+
+  <section id="construir">
+    <h2>00 &middot; O destino</h2>
+    <p class="h2big">O que vamos construir</p>
+    <p>O <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">USGS</a>, o serviço geológico dos Estados Unidos, publica todo terremoto registrado no planeta numa API pública, sem chave, no padrão internacional FDSN. É um dado vivo: um evento entra minutos depois de acontecer, como estimativa automática, e é revisado durante semanas ou meses. Já a magnitude, a localização e a profundidade mudam depois que um sismólogo confere. Um terremoto de 2025 foi revisado ontem.</p>
+    <p>A pergunta de negócio é de uma resseguradora: <strong>onde o chão treme, com que força, com que frequência, e quanto a primeira estimativa erra</strong>. No fim das quatro aulas, 2025 inteiro estará num lakehouse governado, atualizado todo dia por um Job, com tabelas Gold prontas para qualquer ferramenta de análise consumir. Primeiro a planta:</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 760 392" role="img" aria-label="Arquitetura: API do USGS, notebook de extração, volume landing, tabelas bronze, silver e gold no catálogo sismos do Unity Catalog, e o SQL editor consultando a Gold, tudo orquestrado por um Lakeflow Job">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+
+        <g font-family="Archivo, sans-serif">
+          <text x="58" y="16" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">O DADO CHEGA</text>
+          <text x="370" y="16" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">O DADO MORA</text>
+          <text x="694" y="16" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">O DADO É LIDO</text>
+
+          <rect x="8" y="58" width="96" height="58" rx="8" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="56" y="82" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink)">USGS</text>
+          <text x="56" y="99" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">API FDSN &#183; GeoJSON</text>
+          <text x="56" y="136" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">sem chave</text>
+          <text x="56" y="151" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">12 meses</text>
+          <text x="56" y="166" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">/count antes de /query</text>
+
+          <line x1="108" y1="85" x2="160" y2="85" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+          <text x="133" y="76" text-anchor="middle" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--accent)">01_extract</text>
+
+          <rect x="150" y="30" width="444" height="306" rx="12" fill="var(--sunken)" stroke="var(--line)" stroke-width="1.4"/>
+          <text x="166" y="50" font-size="12.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">sismos</text>
+          <text x="216" y="50" font-size="11" fill="var(--ink-3)">catálogo no Unity Catalog &#183; catálogo.schema.tabela</text>
+
+          <rect x="166" y="62" width="250" height="46" rx="8" fill="var(--surface)" stroke="var(--ink-3)" stroke-dasharray="4 3"/>
+          <text x="180" y="81" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">bronze.landing/</text>
+          <text x="180" y="97" font-size="10.5" fill="var(--ink-3)">volume &#183; o GeoJSON exatamente como veio</text>
+
+          <line x1="291" y1="111" x2="291" y2="132" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+          <text x="302" y="126" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--accent)">02_bronze &#183; Auto Loader</text>
+
+          <rect x="166" y="136" width="250" height="46" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="180" y="155" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">bronze.terremotos_raw</text>
+          <text x="180" y="171" font-size="10.5" fill="var(--ink-3)">1 linha = 1 resposta da API &#183; Delta</text>
+
+          <line x1="291" y1="185" x2="291" y2="206" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+          <text x="302" y="200" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--accent)">03_silver &#183; MERGE</text>
+
+          <rect x="166" y="210" width="250" height="46" rx="8" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="180" y="229" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--amber)">silver.eventos</text>
+          <text x="180" y="245" font-size="10.5" fill="var(--amber)">tipado &#183; 1 linha = 1 evento, versão mais nova</text>
+
+          <line x1="291" y1="259" x2="291" y2="280" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+          <text x="302" y="274" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--accent)">04_gold &#183; SQL</text>
+
+          <rect x="166" y="284" width="250" height="40" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="180" y="301" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--accent)">gold.*</text>
+          <text x="180" y="316" font-size="10.5" fill="var(--accent)">agregado &#183; uma pergunta por tabela</text>
+
+          <rect x="434" y="62" width="144" height="262" rx="8" fill="none" stroke="var(--ink-3)" stroke-width="1.1" stroke-dasharray="4 3"/>
+          <text x="506" y="84" text-anchor="middle" font-size="10" letter-spacing="1.2" fill="var(--ink-3)">GOVERNANÇA</text>
+          <text x="448" y="116" font-size="11" fill="var(--ink-2)">GRANT por grupo</text>
+          <text x="448" y="148" font-size="11" fill="var(--ink-2)">máscara de coluna</text>
+          <text x="448" y="180" font-size="11" fill="var(--ink-2)">linhagem automática</text>
+          <text x="448" y="212" font-size="11" fill="var(--ink-2)">histórico do Delta</text>
+          <text x="448" y="244" font-size="11" fill="var(--ink-2)">time travel</text>
+          <text x="506" y="300" text-anchor="middle" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">aula 3</text>
+
+          <rect x="638" y="62" width="114" height="52" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="695" y="84" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--ink)">SQL editor</text>
+          <text x="695" y="100" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">explorar &#183; conferir</text>
+          <line x1="598" y1="88" x2="632" y2="88" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+
+          <rect x="638" y="238" width="114" height="52" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="695" y="260" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--accent)">consumo</text>
+          <text x="695" y="277" text-anchor="middle" font-size="10.5" fill="var(--accent)">SQL na Gold</text>
+          <path d="M 420 304 L 590 304 Q 612 304 612 294 L 612 274 Q 612 264 622 264 L 632 264" fill="none" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#a2)"/>
+          <text x="622" y="300" font-size="10" font-family="JetBrains Mono, monospace" fill="var(--accent)">SELECT</text>
+
+          <rect x="8" y="350" width="744" height="34" rx="8" fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="5 4"/>
+          <text x="24" y="371" font-size="11.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">Lakeflow Job</text>
+          <text x="124" y="371" font-size="11" fill="var(--ink-3)">01_extract &#8594; 02_bronze &#8594; 03_silver &#8594; 04_gold &#183; todo dia às 06h &#183; só o que mudou desde ontem</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Tudo isso roda na nuvem do Databricks, em computação <em>serverless</em>: não existe cluster para criar nem máquina para ligar. O catálogo <code>sismos</code> é o equivalente ao arquivo <code>.duckdb</code> do curso iniciante, só que governado. Cada seta é um notebook seu, e cada um pode ser rodado de novo, do zero, sem duplicar nada.</p>
+    </div>
+
+    <p>Lido de cima para baixo, o mesmo caminho com o que cada camada entrega:</p>
+
+    <div class="pipe">
+      <div class="layer l-raw">
+        <span class="tag">API</span>
+        <span class="desc"><b>USGS</b>: 12 respostas GeoJSON, uma por mês de 2025.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">01_extract &middot; <em>Python</em> pergunta quantos são, baixa e confere</span></div>
+      <div class="layer l-raw">
+        <span class="tag">landing/</span>
+        <span class="desc"><b>Arquivos num volume</b>. Se o USGS revisar amanhã, você ainda tem o que ele disse hoje.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">02_bronze &middot; <em>Auto Loader</em> lê só o arquivo novo e grava em Delta</span></div>
+      <div class="layer l-bronze">
+        <span class="tag">bronze</span>
+        <span class="desc"><b>Espelho fiel</b> da resposta, agora consultável em SQL, com colunas de auditoria.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">03_silver &middot; <em>PySpark</em> explode, tipa e faz MERGE pela versão mais nova</span></div>
+      <div class="layer l-ref">
+        <span class="tag">silver</span>
+        <span class="desc"><b>Dado confiável</b> e ainda granular: 1 linha = 1 evento.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">04_gold &middot; <em>SQL</em> agrega e responde perguntas</span></div>
+      <div class="layer l-mart">
+        <span class="tag">gold</span>
+        <span class="desc"><b>Pronto para consumo</b>: eventos por região, faixas de magnitude, risco por país.</span>
+      </div>
+    </div>
+
+    <p class="small">Quatro notebooks, três camadas e uma regra que vale para todas: <strong>qualquer notebook pode ser rodado de novo sem duplicar dado</strong>. No curso iniciante isso se resolvia apagando e recriando a tabela. Aqui não dá, porque a Bronze guarda histórico e a fonte muda. Aprender a ser idempotente <em>sem</em> apagar nada é o salto de júnior para pleno.</p>
+  </section>
+
+  <section id="evolucao">
+    <h2>01 &middot; De onde viemos</h2>
+    <p class="h2big">A evolução da engenharia de dados</p>
+    <p>Um disquete de 3,5 polegadas, o padrão do fim dos anos 1980, guardava <strong>1,44 MB</strong>. Para guardar 1 GB, eram quase 700 disquetes. Para 1 TB, que hoje cabe num pen drive, quase 700 mil, uma pilha de uns 2 km de altura. Os 12 arquivos que a turma vai baixar do USGS na aula 2 ocupam 21 MB: 15 disquetes.</p>
+    <p>Parece curiosidade, mas é a história inteira da engenharia de dados. <strong>Quase toda decisão de arquitetura das últimas quatro décadas foi uma resposta ao preço de guardar um byte.</strong> Quando guardar era caro, a regra era jogar fora. Quando ficou barato, a regra virou guardar tudo.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 292" role="img" aria-label="Gráfico em escala logarítmica do custo aproximado de 1 GB de armazenamento em disco: cerca de 300 mil dólares em 1981, 9 mil em 1990, 10 em 2000, 10 centavos em 2010 e 2 centavos em 2020. Marcos anotados: disquete de 1,44 MB em 1987, Amazon S3 e Hadoop em 2006, Delta Lake aberto em 2019.">
+        <g font-family="Archivo, sans-serif">
+          <!-- grade: uma linha por ordem de grandeza (escala log) -->
+          <g stroke="var(--line)" stroke-width="1">
+            <line x1="70" y1="40" x2="700" y2="40"/>
+            <line x1="70" y1="95" x2="700" y2="95"/>
+            <line x1="70" y1="150" x2="700" y2="150"/>
+            <line x1="70" y1="205" x2="700" y2="205"/>
+            <line x1="70" y1="260" x2="700" y2="260" stroke="var(--ink-3)"/>
+          </g>
+          <g font-size="10.5" fill="var(--ink-3)" text-anchor="end">
+            <text x="62" y="44">US$ 1 mi</text>
+            <text x="62" y="99">US$ 10 mil</text>
+            <text x="62" y="154">US$ 100</text>
+            <text x="62" y="209">US$ 1</text>
+            <text x="62" y="264">US$ 0,01</text>
+          </g>
+          <g font-size="10.5" fill="var(--ink-3)" text-anchor="middle">
+            <text x="70" y="280">1980</text>
+            <text x="210" y="280">1990</text>
+            <text x="350" y="280">2000</text>
+            <text x="490" y="280">2010</text>
+            <text x="630" y="280">2020</text>
+          </g>
+
+          <!-- marcos -->
+          <g stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 4">
+            <line x1="168" y1="30" x2="168" y2="260"/>
+            <line x1="434" y1="30" x2="434" y2="260"/>
+            <line x1="616" y1="30" x2="616" y2="260"/>
+          </g>
+          <g font-size="10.5" fill="var(--ink-2)">
+            <text x="168" y="22" text-anchor="middle">1987 &#183; disquete 1,44 MB</text>
+            <text x="434" y="22" text-anchor="middle">2006 &#183; Amazon S3 e Hadoop</text>
+            <text x="700" y="22" text-anchor="end">2019 &#183; Delta Lake</text>
+          </g>
+
+          <!-- série -->
+          <polyline points="84,54.4 210,96.3 350,177.5 490,232.5 630,251.7" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <g fill="var(--accent)" stroke="var(--surface)" stroke-width="2">
+            <circle cx="84" cy="54.4" r="4.5"/>
+            <circle cx="210" cy="96.3" r="4.5"/>
+            <circle cx="350" cy="177.5" r="4.5"/>
+            <circle cx="490" cy="232.5" r="4.5"/>
+            <circle cx="630" cy="251.7" r="4.5"/>
+          </g>
+          <!-- rótulos seletivos: começo e fim -->
+          <text x="96" y="58" font-size="11.5" font-weight="600" fill="var(--ink)" stroke="var(--surface)" stroke-width="4" paint-order="stroke">&#8776; US$ 300 mil por GB</text>
+          <text x="626" y="222" font-size="11.5" font-weight="600" fill="var(--ink)" text-anchor="end" stroke="var(--surface)" stroke-width="4" paint-order="stroke">&#8776; US$ 0,02 por GB</text>
+
+          <!-- áreas de hover maiores que o ponto -->
+          <g fill="transparent">
+            <circle cx="84" cy="54.4" r="14"><title>1981: ≈ US$ 300.000 por GB</title></circle>
+            <circle cx="210" cy="96.3" r="14"><title>1990: ≈ US$ 9.000 por GB</title></circle>
+            <circle cx="350" cy="177.5" r="14"><title>2000: ≈ US$ 10 por GB</title></circle>
+            <circle cx="490" cy="232.5" r="14"><title>2010: ≈ US$ 0,10 por GB</title></circle>
+            <circle cx="630" cy="251.7" r="14"><title>2020: ≈ US$ 0,02 por GB</title></circle>
+          </g>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Custo aproximado de 1 GB em disco rígido, em dólares da época. A escala é logarítmica: cada linha da grade é 100 vezes mais barata que a de cima. Em quarenta anos, o preço caiu cerca de <strong>dez milhões de vezes</strong>. Valores em ordem de grandeza, a partir da série histórica de preços de disco compilada por <a href="https://jcmit.net/diskprice.htm" target="_blank" rel="noopener">John C. McCallum</a>.</p>
+    </div>
+    <details>
+      <summary>Ver os números em tabela</summary>
+      <div class="tablewrap" style="margin-bottom:0">
+        <table>
+          <thead><tr><th>Ano</th><th style="text-align:right">1 GB custava (aprox.)</th><th>Para comparar</th></tr></thead>
+          <tbody>
+            <tr><td class="term">1981</td><td class="num">US$ 300.000</td><td>Mais que um apartamento</td></tr>
+            <tr><td class="term">1990</td><td class="num">US$ 9.000</td><td>Um carro popular</td></tr>
+            <tr><td class="term">2000</td><td class="num">US$ 10</td><td>Um almoço</td></tr>
+            <tr><td class="term">2010</td><td class="num">US$ 0,10</td><td>Uma bala</td></tr>
+            <tr><td class="term">2020</td><td class="num">US$ 0,02</td><td>Quase nada</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <h3>Quatro eras, uma pergunta: quanto custa guardar?</h3>
+    <div class="aulas">
+      <article class="aula">
+        <div class="when"><b>90</b>anos 1990</div>
+        <div>
+          <h3>Data warehouse</h3>
+          <p>Disco caro e servidor caro, comprados juntos e dimensionados para o pico. Então só entrava no banco o que já estava limpo e resumido: o dado era <strong>transformado antes de ser carregado</strong> (ETL), e o bruto era descartado. O schema era decidido antes de o dado chegar (<em>schema-on-write</em>), e a modelagem dimensional de Kimball, com fatos e dimensões, nasceu para tirar o máximo de cada byte. Funcionava muito bem para BI. Para uma pergunta nova que precisasse do dado descartado, não tinha volta.</p>
+        </div>
+      </article>
+      <article class="aula">
+        <div class="when"><b>06</b>2006 a 2015</div>
+        <div>
+          <h3>Big data e data lake</h3>
+          <p>O Google mostra como processar em centenas de máquinas baratas (MapReduce), surge o Hadoop, e a Amazon lança o S3. Disco virou commodity, e a regra se inverte: <strong>guarde tudo, bruto, e decida depois</strong> (<em>schema-on-read</em>). Nasce o data lake. O problema: arquivo solto não tem transação nem schema garantido, e muitos lakes viraram pântanos, com terabytes que ninguém sabia o que eram nem se estavam certos.</p>
+        </div>
+      </article>
+      <article class="aula">
+        <div class="when"><b>12</b>2012 em diante</div>
+        <div>
+          <h3>Warehouse na nuvem</h3>
+          <p>Redshift, BigQuery e Snowflake <strong>separam armazenamento de computação</strong>: o dado fica num storage barato, e a máquina liga só para processar. Como carregar ficou barato, o ETL vira <strong>ELT</strong>: carrega bruto primeiro e transforma lá dentro, com SQL. O dado bruto passa a ser guardado, mas num formato fechado, de um fornecedor só.</p>
+        </div>
+      </article>
+      <article class="aula">
+        <div class="when"><b>19</b>2019 em diante</div>
+        <div>
+          <h3>Lakehouse</h3>
+          <p>Formatos abertos de tabela, como Delta Lake (aberto pela Databricks em 2019) e Apache Iceberg, colocam as garantias de um warehouse (transação, schema, histórico) direto sobre os arquivos baratos do lake. Um dado só, num formato aberto, servindo BI, engenharia e ciência de dados. É onde este curso acontece.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="versus" style="margin-top:16px">
+      <div class="vs-card bad">
+        <p class="vs-h">Quando guardar era caro</p>
+        <p class="vs-tag">ETL</p>
+        <p class="vs-tag-sub">Extract &middot; Transform &middot; Load</p>
+        <p class="vs-flow">extrai &rarr; transforma &rarr; carrega<br>&nbsp;&nbsp;o bruto vai para o lixo</p>
+        <p>Cada byte guardado precisava se justificar. Histórico era luxo, e reprocessar do zero era impossível, porque a origem já tinha sido descartada.</p>
+      </div>
+      <div class="vs-card good">
+        <p class="vs-h">Quando guardar ficou barato</p>
+        <p class="vs-tag">ELT</p>
+        <p class="vs-tag-sub">Extract &middot; Load &middot; Transform</p>
+        <p class="vs-flow">extrai &rarr; guarda bruto &rarr; transforma<br>&nbsp;&nbsp;em camadas, quantas vezes precisar</p>
+        <p>O bruto vira patrimônio: dá para reprocessar quando a regra muda, auditar o que a fonte disse e responder perguntas que ninguém tinha pensado.</p>
+      </div>
+    </div>
+
+    <div class="note"><b>Repare no curso inteiro por essa lente.</b> A landing guarda a resposta da API como veio. A Bronze guarda de novo, como tabela. O Delta guarda cada versão de cada tabela. Em 1990, isso seria desperdício indefensável: os 21 MB da landing custariam uns 200 dólares de disco. Hoje custam uma fração de centavo. Arquitetura medalhão não é moda. É o que faz sentido quando guardar ficou dez milhões de vezes mais barato.</div>
+  </section>
+
+  <section id="databricks">
+    <h2>02 &middot; A plataforma</h2>
+    <p class="h2big">O que é o Databricks</p>
+    <p>O Databricks é uma plataforma de dados na nuvem construída em volta do <strong>Apache Spark</strong>, o motor de processamento distribuído que os próprios fundadores criaram em Berkeley. Hoje ele é bem mais que Spark: armazenamento em formato de tabela (Delta Lake), catálogo e permissões (Unity Catalog), orquestração (Jobs), SQL para analista (SQL warehouse), dashboards e assistentes de IA. Tudo num lugar só, que é o argumento de venda e o motivo de ele aparecer em tantas vagas.</p>
+    <p>A ideia central que separa o Databricks de um banco de dados tradicional: <strong>o armazenamento e o processamento são coisas separadas</strong>.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 250" role="img" aria-label="Separação entre armazenamento e computação: o dado mora em arquivos no storage de objetos; notebooks, SQL warehouse e Jobs são computação que liga, processa e desliga">
+        <defs>
+          <marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+        <g font-family="Archivo, sans-serif">
+          <text x="360" y="16" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">COMPUTAÇÃO &#183; LIGA, PROCESSA, DESLIGA &#183; VOCÊ PAGA POR MINUTO</text>
+          <rect x="40" y="30" width="190" height="62" rx="9" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="135" y="56" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">Notebook</text>
+          <text x="135" y="76" text-anchor="middle" font-size="11.5" fill="var(--ink-3)">Python e SQL &#183; engenharia</text>
+          <rect x="265" y="30" width="190" height="62" rx="9" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="360" y="56" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">SQL warehouse</text>
+          <text x="360" y="76" text-anchor="middle" font-size="11.5" fill="var(--ink-3)">SQL editor &#183; dashboards &#183; análise</text>
+          <rect x="490" y="30" width="190" height="62" rx="9" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="585" y="56" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">Job</text>
+          <text x="585" y="76" text-anchor="middle" font-size="11.5" fill="var(--ink-3)">o mesmo código, agendado</text>
+          <line x1="135" y1="96" x2="135" y2="140" stroke="var(--ink-3)" stroke-width="1.4" marker-start="url(#a3)" marker-end="url(#a3)"/>
+          <line x1="360" y1="96" x2="360" y2="140" stroke="var(--ink-3)" stroke-width="1.4" marker-start="url(#a3)" marker-end="url(#a3)"/>
+          <line x1="585" y1="96" x2="585" y2="140" stroke="var(--ink-3)" stroke-width="1.4" marker-start="url(#a3)" marker-end="url(#a3)"/>
+          <rect x="40" y="146" width="640" height="34" rx="8" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="360" y="168" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--amber)">Unity Catalog &#183; nomes, permissões, linhagem</text>
+          <rect x="40" y="190" width="640" height="46" rx="8" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="360" y="211" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">Storage de objetos &#183; arquivos Delta e volumes</text>
+          <text x="360" y="227" text-anchor="middle" font-size="11" fill="var(--ink-3)">S3, ADLS ou GCS &#183; barato, praticamente infinito, sempre ligado</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Três tipos de computação, um dado só. Desligar o notebook não apaga nada, e o analista no SQL editor lê exatamente a mesma tabela que o seu notebook acabou de escrever. Entre os dois, o Unity Catalog decide quem pode ver o quê.</p>
+    </div>
+
+    <p>No Free Edition você nem escolhe a máquina: a computação é <strong>serverless</strong>. Você roda uma célula, o Databricks liga o que for preciso e cobra (aqui, da sua cota grátis) só pelo tempo de uso. Nas empresas ainda existem clusters configurados à mão, mas a direção do mercado é essa.</p>
+
+    <h3>O workspace, em cinco lugares</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Na barra lateral</th><th>Para que serve no curso</th></tr></thead>
+        <tbody>
+          <tr><td class="term">Workspace</td><td>Pastas com os seus notebooks. É o "explorador de arquivos" do código.</td></tr>
+          <tr><td class="term">Catalog</td><td>O Catalog Explorer: catálogos, schemas, tabelas e volumes, com abas de amostra, histórico, linhagem e permissões.</td></tr>
+          <tr><td class="term">SQL Editor</td><td>Consultas SQL soltas, rodando no SQL warehouse. O lugar de conferir dado.</td></tr>
+          <tr><td class="term">Jobs &amp; Pipelines</td><td>Onde os notebooks viram um pipeline agendado, na aula 4.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Prática &middot; criar a conta</h3>
+    <article class="step" data-id="s0" id="pratica-conta">
+      <div class="step-head">
+        <span class="step-n">01</span>
+        <div><p class="step-title">Criar a conta no Free Edition</p><p class="step-sub">Sem cartão. O workspace nasce pronto</p></div>
+      </div>
+      <div class="step-body">
+        <ol class="body">
+          <li>Abra o link de cadastro: <a href="https://login.databricks.com/?intent=CE_SIGN_UP" target="_blank" rel="noopener"><strong>login.databricks.com</strong></a>.</li>
+          <li>Aparece uma tela com duas opções lado a lado. Escolha a da <strong>direita</strong>, <b>Personal</b> (com a etiqueta verde <b>Free forever</b>), e clique em <b>Get Free Edition</b>.</li>
+          <li>Escolha como entrar. <strong>Recomendação do curso: use a sua conta Google</strong> (botão <b>Sign in with Google</b>). O Databricks cria um workspace só seu em alguns segundos.</li>
+        </ol>
+        <div class="note"><b>Por que Google, e não Microsoft ou e-mail.</b> Na experiência com as turmas, contas criadas com Google conseguiram acessar mais sites externos de dentro do Databricks do que as criadas com Microsoft. Isso pesa na aula 2, quando o notebook vai buscar dados numa API na internet. Se você não tem conta Google, pode usar outra opção: o <a href="#api">teste do fim da aula</a> vai mostrar se a sua conta tem acesso, e o plano B resolve se não tiver.</div>
+        <figure style="margin:0 0 14px">
+          <img src="img/cadastro.png" alt="Tela de cadastro do Databricks com duas opções: Work, com trial de 14 dias, à esquerda, e Personal, Free forever, com o botão Get Free Edition, à direita" style="display:block;width:100%;max-width:640px;height:auto;border:1px solid var(--line);border-radius:10px" loading="lazy">
+        </figure>
+        <div class="note"><b>Não clique em <i>Start a trial</i>.</b> A opção da esquerda, <b>Work</b>, é um teste de 14 dias para empresas: depois desse prazo ele acaba e pede pagamento, provavelmente no meio do curso. O curso inteiro roda no <b>Personal &middot; Free Edition</b>, que não expira e não pede cartão.</div>
+        <div class="note"><b>Free Edition não é Community Edition.</b> A Community Edition foi aposentada em 2025, e tutorial antigo que fala em "criar cluster" é dela. No Free Edition não existe cluster para criar: a computação é toda serverless e aparece sozinha quando você roda uma célula.</div>
+        <p class="small">Use uma conta pessoal e não a do trabalho: o Free Edition é para estudo, sem uso comercial, e o workspace é seu mesmo depois do curso. Conta que fica muito tempo parada pode ser removida pelo Databricks, então vale entrar de vez em quando.</p>
+        <div class="verify"><p class="vh">Confira</p><p>Na barra lateral esquerda aparecem, entre outros, <b>Workspace</b>, <b>Catalog</b>, <b>Jobs &amp; Pipelines</b> e <b>SQL Editor</b>. Clique em <b>Catalog</b>: já existe um catálogo chamado <code>workspace</code>. Ele é seu, mas no curso vamos criar o nosso.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-s0"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="lakehouse">
+    <h2>03 &middot; A arquitetura</h2>
+    <p class="h2big">Lakehouse e Delta Lake</p>
+    <p>Você viu a <a href="#evolucao">história</a>: durante anos, empresa de dados teve que escolher entre o warehouse e o lake, e quase sempre acabava pagando pelos dois. Lado a lado:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>Data warehouse</th><th>Data lake</th><th>Lakehouse</th></tr></thead>
+        <tbody>
+          <tr><td><b>Guarda</b></td><td>Tabelas, em formato fechado</td><td>Arquivos soltos (CSV, JSON, Parquet)</td><td>Arquivos abertos com uma camada de tabela por cima</td></tr>
+          <tr><td><b>Custo</b></td><td>Alto</td><td>Baixo</td><td>Baixo</td></tr>
+          <tr><td><b>Transação</b></td><td>Sim</td><td>Não: duas escritas ao mesmo tempo corrompem</td><td>Sim</td></tr>
+          <tr><td><b>Schema</b></td><td>Garantido</td><td>Cada arquivo do seu jeito</td><td>Garantido, e pode evoluir</td></tr>
+          <tr><td><b>Histórico</b></td><td>Limitado</td><td>Só se você copiar arquivo</td><td>Toda versão, com time travel</td></tr>
+          <tr><td><b>Serve para</b></td><td>BI e SQL</td><td>Ciência de dados e volume bruto</td><td>Os dois, sem copiar o dado</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Documentação oficial: <a href="https://docs.databricks.com/aws/en/lakehouse/" target="_blank" rel="noopener">O que é um data lakehouse</a>.</p>
+    <p>O que transforma um lake em lakehouse é o formato de tabela. No Databricks, ele é o <strong>Delta Lake</strong>: arquivos Parquet comuns, mais uma pasta <code>_delta_log</code> com um registro de cada transação. A tabela "de verdade" é o que o log diz que ela é. Documentação: <a href="https://docs.databricks.com/aws/en/delta/" target="_blank" rel="noopener">O que é o Delta Lake</a>.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 210" role="img" aria-label="Delta Lake: o log de transações registra cada versão; cada versão aponta para um conjunto de arquivos Parquet">
+        <g font-family="Archivo, sans-serif">
+          <text x="20" y="20" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">_delta_log/  &#183;  UMA ENTRADA POR TRANSAÇÃO</text>
+          <rect x="20" y="32" width="150" height="54" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="95" y="54" text-anchor="middle" font-size="12.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">versão 0</text>
+          <text x="95" y="72" text-anchor="middle" font-size="11" fill="var(--ink-3)">CREATE TABLE</text>
+          <rect x="195" y="32" width="150" height="54" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="270" y="54" text-anchor="middle" font-size="12.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">versão 1</text>
+          <text x="270" y="72" text-anchor="middle" font-size="11" fill="var(--ink-3)">INSERT: mag 8,0</text>
+          <rect x="370" y="32" width="150" height="54" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="445" y="54" text-anchor="middle" font-size="12.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">versão 2</text>
+          <text x="445" y="72" text-anchor="middle" font-size="11" fill="var(--ink-3)">UPDATE: mag 8,7</text>
+          <rect x="545" y="32" width="150" height="54" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="620" y="54" text-anchor="middle" font-size="12.5" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--accent)">versão 3</text>
+          <text x="620" y="72" text-anchor="middle" font-size="11" fill="var(--accent)">UPDATE: mag 8,8</text>
+          <text x="20" y="128" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">ARQUIVOS PARQUET  &#183;  NUNCA ALTERADOS, SÓ ADICIONADOS</text>
+          <rect x="195" y="140" width="150" height="34" rx="6" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="270" y="162" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">part-a.parquet</text>
+          <rect x="370" y="140" width="150" height="34" rx="6" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="445" y="162" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">part-b.parquet</text>
+          <rect x="545" y="140" width="150" height="34" rx="6" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="620" y="162" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">part-c.parquet</text>
+          <line x1="270" y1="88" x2="270" y2="138" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <line x1="445" y1="88" x2="445" y2="138" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <line x1="620" y1="88" x2="620" y2="138" stroke="var(--accent)" stroke-width="1.4"/>
+          <text x="360" y="200" text-anchor="middle" font-size="11.5" fill="var(--ink-3)" font-style="italic">ler a "versão 1" é só ler os arquivos para os quais ela apontava</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Um <code>UPDATE</code> não reescreve o arquivo antigo: grava um arquivo novo e registra no log que a versão nova usa ele. É por isso que <code>DESCRIBE HISTORY</code> e <code>VERSION AS OF</code> existem, e é isso que você vai fazer com as próprias mãos na prática da aula.</p>
+    </div>
+
+    <h3>ACID: o que "ter transação" quer dizer</h3>
+    <p>Na tabela lá em cima, a linha que mais separa o lake do lakehouse é a da <strong>transação</strong>. Transação, em banco de dados, é um conjunto de quatro garantias com nome de sigla: <strong>ACID</strong>. Warehouse sempre teve. Arquivo solto num lake nunca teve. O Delta Lake traz as quatro para dentro do lake, e é o log de transações do desenho acima que faz isso.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Letra</th><th>Garantia</th><th>No nosso projeto</th></tr></thead>
+        <tbody>
+          <tr><td class="term"><b>A</b>tomicidade</td><td>Tudo ou nada. Uma escrita acontece inteira ou não acontece.</td><td>Se o <code>MERGE</code> dos 29 mil eventos falhar no meio, nenhuma linha da Silver muda. Num lake comum, o job que morre no meio deixa metade dos arquivos gravados, e ninguém sabe qual metade.</td></tr>
+          <tr><td class="term"><b>C</b>onsistência</td><td>A tabela só aceita dado que respeita as regras dela: schema, tipos e restrições.</td><td>Tentar gravar a magnitude <code>"forte"</code> numa coluna <code>DOUBLE</code> é recusado, em vez de virar lixo silencioso no arquivo.</td></tr>
+          <tr><td class="term"><b>I</b>solamento</td><td>Quem lê enquanto alguém escreve vê a última versão completa, nunca uma escrita pela metade.</td><td>O analista consultando a Gold às 6h, enquanto o Job reescreve a tabela, vê a versão de ontem inteira até o Job terminar. Depois, vê a nova inteira.</td></tr>
+          <tr><td class="term"><b>D</b>urabilidade</td><td>Transação confirmada não se perde, nem se a máquina cair logo depois.</td><td>Cada versão confirmada fica gravada no storage e no histórico. É por isso que o <code>RESTORE</code> da prática consegue trazer a tabela de volta.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Como funciona por baixo: uma escrita só "existe" quando o Delta consegue gravar a próxima entrada do <code>_delta_log</code>. Até lá, os arquivos novos estão no storage, mas nenhuma versão aponta para eles, então ninguém os enxerga. Se dois processos tentam gravar a mesma versão ao mesmo tempo, só um consegue, e o outro confere se houve conflito antes de tentar de novo. Detalhes na documentação oficial: <a href="https://docs.databricks.com/aws/en/lakehouse/acid" target="_blank" rel="noopener">garantias ACID no Databricks</a>.</p>
+
+    <h3>A arquitetura medalhão</h3>
+    <p>Lakehouse diz <em>onde</em> o dado mora. Medalhão diz <em>como ele é organizado</em> lá dentro: três camadas com contratos diferentes, cada uma alimentando a seguinte.</p>
+    <div class="pipe">
+      <div class="layer l-bronze">
+        <span class="tag">bronze</span>
+        <span class="desc"><b>O que chegou</b>, do jeito que chegou, com colunas de auditoria. Nunca se corrige nada aqui: é a prova do que a fonte disse.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">tipar &middot; deduplicar &middot; <em>decidir</em> o que fazer com nulo e lixo</span></div>
+      <div class="layer l-ref">
+        <span class="tag">silver</span>
+        <span class="desc"><b>O que você confia</b>: tipado, sem duplicata, ainda no grão mais fino.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">agregar &middot; juntar &middot; responder</span></div>
+      <div class="layer l-mart">
+        <span class="tag">gold</span>
+        <span class="desc"><b>O que o negócio consome</b>: uma tabela por pergunta, com nome de negócio.</span>
+      </div>
+    </div>
+    <p class="small">Se você fez o curso iniciante, já conhece: é o mesmo <code>raw &rarr; refined &rarr; marts</code>, com o nome que o mercado usa e que vai aparecer na entrevista. Documentação: <a href="https://docs.databricks.com/aws/en/lakehouse/medallion" target="_blank" rel="noopener">arquitetura medalhão</a>.</p>
+    <h3>Prática &middot; uma tabela com memória</h3>
+    <article class="step" data-id="s1" id="pratica-delta">
+      <div class="step-head">
+        <span class="step-n">02</span>
+        <div><p class="step-title">Versão, histórico e volta no tempo</p><p class="step-sub">Delta Lake no SQL editor, um comando de cada vez</p></div>
+      </div>
+      <div class="step-body">
+        <p>O terremoto de Kamchatka, em 29 de julho de 2025, é um bom exemplo de dado que muda: nas primeiras horas, a magnitude divulgada subiu de 8,0 para 8,7 e depois para 8,8. Vamos reproduzir essa história numa tabela e ver o Delta guardar cada versão.</p>
+        <p>A tabela vai no catálogo <code>workspace</code>, que já veio com a sua conta. O catálogo do projeto, a gente cria daqui a pouco, depois de entender o Unity Catalog.</p>
+
+        <p class="cmdlabel">Abrir o editor de SQL</p>
+        <ol class="body">
+          <li>Na barra de menu lateral, à esquerda, clique em <b>SQL Editor</b>.</li>
+          <li>No menu que abre, clique em <b>SQL Query</b>. Abre uma aba nova, com a área de texto vazia.</li>
+        </ol>
+
+        <p class="cmdlabel">Como rodar cada comando, nesta prática e nas próximas</p>
+        <ol class="body">
+          <li>Clique no botão <b>copiar</b> do bloco.</li>
+          <li>Clique dentro da área de texto do editor e cole (<kbd>Ctrl+V</kbd>). Se já houver um comando antigo ali, apague antes: <kbd>Ctrl+A</kbd> e <kbd>Delete</kbd>. No editor deve ficar <strong>só um comando</strong>.</li>
+          <li>Clique no botão <b>Run</b>, que fica acima da área de texto.</li>
+          <li>Espere o resultado aparecer na parte de baixo da tela, em <b>Output</b>, e só então vá para o próximo.</li>
+        </ol>
+
+        <p class="cmdlabel">Comando 1 de 11 &middot; criar a tabela</p>
+        <div class="codewrap"><pre>CREATE TABLE IF NOT EXISTS workspace.default.demo_grandes_2025 (
+  id           STRING,
+  lugar        STRING,
+  magnitude    DOUBLE,
+  horario_utc  TIMESTAMP,
+  status       STRING
+);</pre><button class="copy" type="button">copiar</button></div>
+        <p>No primeiro comando aparece a janela <b>Start compute resource?</b>. Ela avisa que a máquina que roda o SQL (o <b>Serverless Starter Warehouse</b>) está desligada. Clique em <b>Start, attach and run</b>. Se quiser que ela ligue sozinha das próximas vezes, marque antes <b>Automatically launch and attach without prompting</b>.</p>
+        <figure style="margin:0 0 14px">
+          <img src="img/start-compute.png" alt="Janela Start compute resource? do Databricks, com o botão Start, attach and run em destaque" style="display:block;width:100%;max-width:560px;height:auto;border:1px solid var(--line);border-radius:10px" loading="lazy">
+        </figure>
+        <p class="small">A máquina leva de alguns segundos a um minuto para ligar na primeira vez. É normal a tela ficar parada. Os próximos comandos são rápidos.</p>
+        <div class="verify"><p class="vh">Deu certo se</p><p>Em <b>Output</b> aparece só a palavra <code>OK</code>. É isso mesmo: comandos que criam ou alteram (como <code>CREATE</code>, <code>UPDATE</code> e <code>DELETE</code>) não devolvem tabela. Comandos de consulta (<code>SELECT</code>, <code>DESCRIBE</code>) devolvem.</p></div>
+
+        <p class="cmdlabel">Comando 2 de 11 &middot; carregar três terremotos</p>
+        <div class="codewrap"><pre>INSERT INTO workspace.default.demo_grandes_2025 VALUES
+  ('us6000qw60', 'Kamchatka Peninsula, Russia', 8.0, TIMESTAMP '2025-07-29 23:24:52', 'automatic'),
+  ('us7000pn9s', 'Mandalay, Burma (Myanmar)',   7.7, TIMESTAMP '2025-03-28 06:20:52', 'reviewed'),
+  ('us6000rgf4', 'Drake Passage',               7.6, TIMESTAMP '2025-10-10 20:29:20', 'reviewed');</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Resultado: uma tabelinha dizendo <code>num_affected_rows = 3</code>, ou seja, três linhas inseridas.</p>
+
+        <p class="cmdlabel">Comando 3 de 11 &middot; olhar a tabela</p>
+        <div class="codewrap"><pre>SELECT * FROM workspace.default.demo_grandes_2025;</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Resultado: as três linhas. Kamchatka está com magnitude <code>8.0</code> e status <code>automatic</code>: a primeira estimativa, feita por computador.</p>
+
+        <p class="cmdlabel">Comando 4 de 11 &middot; o sismólogo revisa: 8,7</p>
+        <div class="codewrap"><pre>UPDATE workspace.default.demo_grandes_2025 SET magnitude = 8.7 WHERE id = 'us6000qw60';</pre><button class="copy" type="button">copiar</button></div>
+
+        <p class="cmdlabel">Comando 5 de 11 &middot; revisa de novo: 8,8, agora conferido</p>
+        <div class="codewrap"><pre>UPDATE workspace.default.demo_grandes_2025 SET magnitude = 8.8, status = 'reviewed' WHERE id = 'us6000qw60';</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Resultado dos dois: <code>num_affected_rows = 1</code>. Uma linha alterada em cada.</p>
+
+        <p class="cmdlabel">Comando 6 de 11 &middot; o que a tabela lembra</p>
+        <div class="codewrap"><pre>DESCRIBE HISTORY workspace.default.demo_grandes_2025;</pre><button class="copy" type="button">copiar</button></div>
+        <div class="verify"><p class="vh">Repare</p><p>Uma linha por versão, da mais nova para a mais antiga. Olhe as colunas <code>version</code> e <code>operation</code>: <code>0</code> é o <code>CREATE TABLE</code>, <code>1</code> o <code>WRITE</code> (o <code>INSERT</code>), e <code>2</code> e <code>3</code> os dois <code>UPDATE</code>s. Ninguém configurou isso: toda tabela Delta é assim.</p></div>
+
+        <p class="cmdlabel">Comando 7 de 11 &middot; voltar no tempo</p>
+        <div class="codewrap"><pre>SELECT id, magnitude, status FROM workspace.default.demo_grandes_2025 VERSION AS OF 1;</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Resultado: a tabela <em>como ela era na versão 1</em>, com Kamchatka em <code>8.0</code> e <code>automatic</code>. A tabela atual não mudou. Você só leu o passado. Nenhum backup foi feito, porque o log do Delta <em>é</em> o backup.</p>
+
+        <p class="cmdlabel">Comando 8 de 11 &middot; o acidente: "esqueci o WHERE"</p>
+        <div class="codewrap"><pre>DELETE FROM workspace.default.demo_grandes_2025;</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Sem <code>WHERE</code>, o <code>DELETE</code> apaga <em>todas</em> as linhas. É um dos erros mais comuns da vida real, e agora você fez de propósito.</p>
+
+        <p class="cmdlabel">Comando 9 de 11 &middot; confirmar o estrago</p>
+        <div class="codewrap"><pre>SELECT count(*) AS linhas FROM workspace.default.demo_grandes_2025;</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">Resultado: <code>0</code>. A tabela está vazia.</p>
+
+        <p class="cmdlabel">Comando 10 de 11 &middot; o conserto</p>
+        <div class="codewrap"><pre>RESTORE TABLE workspace.default.demo_grandes_2025 TO VERSION AS OF 3;</pre><button class="copy" type="button">copiar</button></div>
+
+        <p class="cmdlabel">Comando 11 de 11 &middot; conferir</p>
+        <div class="codewrap"><pre>SELECT * FROM workspace.default.demo_grandes_2025;</pre><button class="copy" type="button">copiar</button></div>
+
+        <div class="verify"><p class="vh">Deu certo se</p><ul class="body">
+          <li>As três linhas voltaram, com Kamchatka em <code>8.8</code> e <code>reviewed</code>.</li>
+          <li>Rode o comando 6 de novo: o <code>DELETE</code> e o <code>RESTORE</code> também viraram versões (4 e 5). Desfazer não apaga o erro do histórico, só registra o conserto. Isso é auditoria.</li>
+        </ul></div>
+        <details>
+          <summary>Rodei um comando duas vezes e as versões não batem</summary>
+          <p>Sem problema. No comando 10, troque o <code>3</code> pela versão certa: rode o comando 6, procure a última linha com <code>operation = UPDATE</code> antes do <code>DELETE</code> e use o número dela. Na vida real é sempre assim: escolhe-se a versão pelo histórico, e não de cabeça.</p>
+          <p>Se rodou o comando 2 duas vezes, a tabela ficou com seis linhas: uma tabela Delta não impede duplicata sozinha. É por isso que, na aula 3, a Silver usa <code>MERGE</code> em vez de <code>INSERT</code>.</p>
+        </details>
+        <label class="mark"><input type="checkbox" id="chk-s1"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="uc">
+    <h2>04 &middot; A governança</h2>
+    <p class="h2big">Unity Catalog</p>
+    <p>Se o Delta é o que garante que a tabela está certa, o Unity Catalog é o que garante que <strong>cada pessoa vê só o que pode ver</strong>, e que dá para saber de onde cada número veio. Ele é o mesmo para todo o workspace: notebook, SQL editor, Job e dashboard passam por ele. Documentação oficial: <a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/" target="_blank" rel="noopener">O que é o Unity Catalog</a>.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 268" role="img" aria-label="Hierarquia do Unity Catalog: metastore, catálogo sismos, schemas bronze, silver e gold, e dentro deles tabelas e volumes">
+        <g font-family="Archivo, sans-serif">
+          <rect x="10" y="10" width="700" height="248" rx="12" fill="none" stroke="var(--ink-3)" stroke-dasharray="5 4"/>
+          <text x="26" y="32" font-size="12" font-weight="700" fill="var(--ink-2)">metastore</text>
+          <text x="98" y="32" font-size="11" fill="var(--ink-3)">um por região &#183; no Free Edition você já tem o seu</text>
+          <rect x="26" y="44" width="668" height="200" rx="10" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="42" y="66" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">sismos</text>
+          <text x="104" y="66" font-size="11" fill="var(--ink-3)">catálogo &#183; 1º nível &#183; normalmente um projeto, área ou ambiente</text>
+
+          <rect x="42" y="80" width="200" height="150" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="56" y="100" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">bronze</text>
+          <text x="112" y="100" font-size="10.5" fill="var(--ink-3)">schema &#183; 2º nível</text>
+          <text x="56" y="128" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">&#9638; terremotos_raw</text>
+          <text x="56" y="150" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">&#9636; landing</text>
+          <text x="56" y="172" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">&#9636; checkpoints</text>
+          <text x="56" y="210" font-size="10.5" fill="var(--ink-3)">&#9638; tabela &#183; &#9636; volume</text>
+
+          <rect x="260" y="80" width="200" height="150" rx="8" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="274" y="100" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--amber)">silver</text>
+          <text x="274" y="128" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--amber)">&#9638; eventos</text>
+
+          <rect x="478" y="80" width="200" height="150" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="492" y="100" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--accent)">gold</text>
+          <text x="492" y="128" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--accent)">&#9638; eventos_por_regiao</text>
+          <text x="492" y="150" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--accent)">&#9638; demo_resumo</text>
+          <text x="492" y="172" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--accent)">&#402; funções, views&#8230;</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Todo objeto tem endereço de três níveis: <code>sismos.silver.eventos</code>. Arquivo também: o volume <code>landing</code> é o caminho <code>/Volumes/sismos/bronze/landing/</code>. Permissão dada num nível desce para os de baixo.</p>
+    </div>
+
+    <p>O que o Unity Catalog entrega, e que você vai ver funcionando:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Recurso</th><th>O que é</th><th>No curso</th></tr></thead>
+        <tbody>
+          <tr><td><b>Permissões</b></td><td><code>GRANT SELECT ON SCHEMA sismos.gold TO analistas</code>. Concedidas a grupos, nunca a pessoas.</td><td>Aula 1 (ver) e aula 4 (montar)</td></tr>
+          <tr><td><b>Tabela gerenciada</b></td><td>O Unity Catalog decide onde os arquivos ficam e cuida deles. <code>DROP</code> apaga de verdade.</td><td>Todas as tabelas do curso</td></tr>
+          <tr><td><b>Volume</b></td><td>Pasta de arquivos com a mesma governança das tabelas. É onde mora o que ainda não é tabela.</td><td>A landing da aula 2</td></tr>
+          <tr><td><b>Linhagem</b></td><td>Registro automático de qual tabela foi lida para escrever qual, até o nível de coluna.</td><td>Aula 1 (ver) e aula 4</td></tr>
+          <tr><td><b>Máscara e filtro</b></td><td>A mesma tabela mostra valores diferentes conforme quem consulta.</td><td>Aula 4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Para se aprofundar em cada recurso: <a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges/" target="_blank" rel="noopener">permissões</a>, <a href="https://docs.databricks.com/aws/en/volumes/" target="_blank" rel="noopener">volumes</a> e <a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage" target="_blank" rel="noopener">linhagem</a>.</p>
+    <div class="note"><b>Por que isso importa na entrevista.</b> Engenheiro júnior responde "como eu carrego esse dado". Pleno também responde "quem pode ver esse dado, como eu provo de onde ele veio, e como eu volto atrás se alguém apagar". As três respostas moram no Unity Catalog e no Delta.</div>
+    <h3>Prática &middot; o catálogo do projeto</h3>
+    <article class="step" data-id="s2" id="pratica-catalogo">
+      <div class="step-head">
+        <span class="step-n">03</span>
+        <div><p class="step-title">Criar o catálogo, os schemas e os volumes</p><p class="step-sub">Dois passos: primeiro o catálogo, depois o resto</p></div>
+      </div>
+      <div class="step-body">
+        <p>Agora você cria a estrutura que acabou de ver no desenho: o catálogo <code>sismos</code>, as três camadas e as duas pastas de arquivos. Use o mesmo SQL editor da prática anterior. A ordem importa: <strong>primeiro o catálogo, sozinho</strong>, e só depois os schemas e os volumes, que moram dentro dele. Não dá para criar um schema dentro de um catálogo que ainda não existe.</p>
+
+        <p class="cmdlabel">Comando 1 de 2 &middot; o catálogo, sozinho</p>
+        <div class="codewrap"><pre>CREATE CATALOG IF NOT EXISTS sismos;</pre><button class="copy" type="button">copiar</button></div>
+
+        <div class="verify"><p class="vh">Espere o OK</p><p>Só vá para o comando 2 depois que o comando 1 mostrar <code>OK</code>. O resto depende do catálogo já existir.</p></div>
+
+        <p class="cmdlabel">Comando 2 de 2 &middot; as três camadas e as duas pastas</p>
+        <div class="codewrap"><pre>CREATE SCHEMA IF NOT EXISTS sismos.bronze;
+CREATE SCHEMA IF NOT EXISTS sismos.silver;
+CREATE SCHEMA IF NOT EXISTS sismos.gold;
+CREATE VOLUME IF NOT EXISTS sismos.bronze.landing;
+CREATE VOLUME IF NOT EXISTS sismos.bronze.checkpoints;</pre><button class="copy" type="button">copiar</button></div>
+        <p>Este bloco tem cinco comandos, e roda de uma vez: apague o comando 1 do editor, cole o bloco inteiro e clique em <b>Run</b>. O editor executa as cinco linhas em ordem, de cima para baixo. Em <b>Output</b> aparece um resultado para cada uma, todos com <code>OK</code>.</p>
+
+        <p class="small">O <code>IF NOT EXISTS</code> quer dizer "crie só se ainda não existir". Por isso, se você rodar um comando duas vezes sem querer, não acontece nada de errado.</p>
+
+        <div class="verify"><p class="vh">Parabéns!</p><p>Os dois passos deram <code>OK</code>? Então <strong>você acabou de criar o seu primeiro catálogo</strong> no <strong>Unity Catalog</strong>. É a estrutura onde o projeto inteiro vai morar: o catálogo <code>sismos</code> é o projeto, os schemas <code>bronze</code>, <code>silver</code> e <code>gold</code> são as camadas, e os volumes são as pastas de arquivos. O <code>landing</code> vai receber o que a API responder, e o <code>checkpoints</code> guarda a memória do pipeline.</p></div>
+
+        <p class="cmdlabel">Encontre o que você criou</p>
+        <ol class="body">
+          <li>Na barra de menu lateral, à esquerda, clique em <b>Catalog</b>.</li>
+          <li>Na lista que aparece, procure <code>sismos</code>. Se a lista for grande, digite <code>sismos</code> na caixa de busca no topo dela. Se ele não aparecer, clique no botão de atualizar (a setinha circular) ao lado da busca.</li>
+          <li>Clique na setinha ao lado de <code>sismos</code> para abrir. Dentro dele estão os três schemas: <code>bronze</code>, <code>silver</code> e <code>gold</code>. O Databricks também cria sozinho um <code>default</code> e um <code>information_schema</code>. Pode ignorar os dois.</li>
+          <li>Abra <code>bronze</code> e depois a pasta <b>Volumes</b>: estão lá <code>landing</code> e <code>checkpoints</code>.</li>
+          <li>Clique em <code>landing</code>. Abre a página do volume, ainda vazio, com o botão <b>Upload to this volume</b>. É nesta pasta que os dados da API vão chegar na aula 2.</li>
+        </ol>
+        <p class="small">Repare no caminho que aparece no topo da página do volume: <code>/Volumes/sismos/bronze/landing</code>. É o endereço em três níveis (catálogo, schema e volume), e é por ele que o código vai encontrar os arquivos.</p>
+        <p class="small">Aproveite e abra também o catálogo <code>workspace</code> &rsaquo; <code>default</code>: a tabela <code>demo_grandes_2025</code> da prática anterior está lá. Dois catálogos, mesma organização em três níveis.</p>
+
+        <details>
+          <summary>Erro <code>NO_SUCH_CATALOG_EXCEPTION: Catalog 'sismos' was not found</code></summary>
+          <p>Um comando de schema ou de volume rodou antes de o catálogo existir. Quase sempre é porque o comando 1 foi pulado, ou porque ele foi colado junto com o bloco do comando 2. Apague tudo do editor, rode o <b>comando 1</b> sozinho, espere o <code>OK</code> e só então cole e rode o bloco do comando 2. Como tudo tem <code>IF NOT EXISTS</code>, repetir não estraga nada.</p>
+        </details>
+        <details>
+          <summary>O comando 1 deu erro de permissão</summary>
+          <p>Use o catálogo que já veio com a sua conta, o <code>workspace</code>. Pule o comando 1 e, no bloco do comando 2, troque a palavra <code>sismos</code> por <code>workspace</code> nas cinco linhas. Por exemplo: <code>CREATE SCHEMA IF NOT EXISTS workspace.bronze;</code>. Avise o professor: daqui para frente, onde o guia disser <code>sismos.</code>, você vai usar <code>workspace.</code>, e o resto é igual.</p>
+        </details>
+        <label class="mark"><input type="checkbox" id="chk-s2"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="s3" id="pratica-linhagem">
+      <div class="step-head">
+        <span class="step-n">04</span>
+        <div><p class="step-title">Seguir o dado pelo catálogo</p><p class="step-sub">Linhagem e permissões, sem escrever documentação</p></div>
+      </div>
+      <div class="step-body">
+        <p>Uma tabela Gold feita a partir da tabela da prática de Delta. É um comando só, mas o Unity Catalog registra sozinho que uma nasceu da outra, mesmo estando em catálogos diferentes.</p>
+        <p class="cmdlabel">Comando 1 de 3 &middot; criar uma Gold a partir da demo</p>
+        <div class="codewrap"><pre>CREATE OR REPLACE TABLE sismos.gold.demo_resumo AS
+SELECT status, count(*) AS eventos, max(magnitude) AS maior_magnitude
+FROM workspace.default.demo_grandes_2025
+GROUP BY status;</pre><button class="copy" type="button">copiar</button></div>
+        <p>Agora vá em <b>Catalog</b> &rsaquo; <code>sismos</code> &rsaquo; <code>gold</code> &rsaquo; <code>demo_resumo</code> e passe pelas abas da página da tabela:</p>
+        <ul class="body">
+          <li><b>Sample Data</b>: as linhas, sem escrever <code>SELECT</code>.</li>
+          <li><b>History</b>: a mesma coisa que o <code>DESCRIBE HISTORY</code>, em tela.</li>
+          <li><b>Lineage</b>: <code>demo_resumo</code> aponta para <code>demo_grandes_2025</code>. Clique em <b>See lineage graph</b> e depois numa coluna: dá para ver de qual coluna de origem <code>maior_magnitude</code> saiu. Ninguém documentou isso, foi o próprio catálogo.</li>
+          <li><b>Permissions</b>: o dono é você. Numa empresa, aqui apareceriam os grupos com acesso.</li>
+        </ul>
+        <p class="cmdlabel">Comando 2 de 3 &middot; quem é você para o Databricks</p>
+        <div class="codewrap"><pre>SELECT current_user();</pre><button class="copy" type="button">copiar</button></div>
+        <p class="cmdlabel">Comando 3 de 3 &middot; quem pode o quê no schema gold</p>
+        <div class="codewrap"><pre>SHOW GRANTS ON SCHEMA sismos.gold;</pre><button class="copy" type="button">copiar</button></div>
+        <div class="verify"><p class="vh">Repare</p><p>O comando 2 devolve o e-mail da sua conta. O comando 3 mostra as permissões do schema. Como foi você quem criou, você é o dono e pode tudo. Na aula 4, a gente monta permissões de verdade, por grupo e por camada.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-s3"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="vocab">
+    <h2>05 &middot; Antes de começar</h2>
+    <p class="h2big">Vocabulário</p>
+    <p>Se você fez o curso iniciante, quase tudo aqui você já conhece com outro nome. A tabela abaixo é a ponte:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>No curso iniciante</th><th>Aqui</th><th>O que muda</th></tr></thead>
+        <tbody>
+          <tr><td class="term">olist.duckdb</td><td class="term">catálogo sismos</td><td>Deixa de ser um arquivo na sua máquina e passa a ser um objeto governado, com dono, permissão e linhagem.</td></tr>
+          <tr><td class="term">pasta raw/</td><td class="term">volume landing</td><td>Arquivos dentro do catálogo, com o mesmo controle de acesso das tabelas.</td></tr>
+          <tr><td class="term">raw &rarr; refined &rarr; marts</td><td class="term">bronze &rarr; silver &rarr; gold</td><td>A mesma ideia com o nome de mercado: a arquitetura medalhão.</td></tr>
+          <tr><td class="term">CREATE OR REPLACE</td><td class="term">Auto Loader / MERGE</td><td>Idempotência sem apagar: processa só o que é novo e atualiza só o que mudou.</td></tr>
+          <tr><td class="term">executar.py</td><td class="term">Lakeflow Job</td><td>Ordem, agendamento, retry e alerta são da plataforma, e não de um script seu.</td></tr>
+          <tr><td class="term">ui.py</td><td class="term">SQL editor</td><td>Já vem pronto no workspace. Não precisa subir servidor nem se preocupar com lock de arquivo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>E as palavras que aparecem a partir da aula 2:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Termo</th><th>O que quer dizer aqui</th></tr></thead>
+        <tbody>
+          <tr><td class="term">Auto Loader</td><td>Leitor de arquivos que lembra o que já leu, num diretório de <em>checkpoint</em>. Rodar de novo processa só o arquivo novo.</td></tr>
+          <tr><td class="term">ACID</td><td>As quatro garantias de uma transação: atomicidade, consistência, isolamento e durabilidade. É o que o Delta traz para o lake.</td></tr>
+          <tr><td class="term">checkpoint</td><td>A pasta onde o Auto Loader anota quais arquivos já leu. Apagar o checkpoint é mandar reler tudo.</td></tr>
+          <tr><td class="term">idempotente</td><td>Rodar uma vez ou dez vezes deixa o dado igual. É o que deixa um Job tentar de novo sozinho às 6h da manhã sem estragar nada.</td></tr>
+          <tr><td class="term">FDSN</td><td>O padrão internacional de API de sismologia. USGS, EMSC e outros centros falam o mesmo protocolo, mas cada um com o seu sotaque.</td></tr>
+          <tr><td class="term">watermark</td><td>A marca de até onde o dado já foi carregado. No USGS ela tem nome: o parâmetro <code>updatedafter</code>. É assunto da aula 4.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b>Por que Free Edition e não um trial de nuvem.</b> Não pede cartão, não expira em 14 dias e já vem com Unity Catalog, serverless, Jobs, SQL editor e dashboards: o mesmo produto das empresas, com cotas menores. O preço disso são alguns limites que vão aparecer no curso, e saber contorná-los também conta como competência:
+      <ul class="body" style="margin:8px 0 0">
+        <li>só computação serverless, com cota diária. Se passar da cota, a computação desliga até o dia seguinte. Os dados não se perdem;</li>
+        <li>um único SQL warehouse, tamanho 2X-Small;</li>
+        <li>no máximo 5 tarefas de Job rodando ao mesmo tempo;</li>
+        <li>internet de saída <strong>restrita a alguns domínios confiáveis</strong>. Por isso a aula 1 termina com um <a href="#api">teste da API</a>, e existe um plano B.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="encontros">
+    <h2>06 &middot; O mapa</h2>
+    <p class="h2big">Os quatro encontros</p>
+    <p>Às quartas, às 19h, uma hora e vinte cada. A aula 1 é de fundamentos: entender a plataforma antes de construir nela. Da aula 2 em diante, o pipeline é escrito ao vivo, um notebook por vez, e o código fica neste guia depois de cada encontro.</p>
+
+    <div class="clock">
+      <span class="c1" style="flex:1 1 19%">correção 15min</span>
+      <span class="c2" style="flex:1 1 62%">construção 50min</span>
+      <span class="c3" style="flex:1 1 19%">dúvidas 15min</span>
+    </div>
+    <p class="small">O formato das aulas 3 e 4, que abrem com a correção do desafio anterior. Traga feito. Se não saiu, traga quebrado, que é o que mais rende na correção.</p>
+
+    <div class="aulas">
+      <article class="aula">
+        <div class="when"><b>01</b>11/11</div>
+        <div>
+          <h3>O Databricks por dentro</h3>
+          <p>O que é a plataforma, por que lakehouse, como o Delta Lake guarda versões e como o Unity Catalog organiza e protege tudo. Tour pelo workspace e, no fim, uma tabela que volta no tempo e um catálogo que mostra de onde veio cada coluna. Sem desafio.</p>
+        </div>
+      </article>
+
+      <article class="aula">
+        <div class="when"><b>02</b>18/11</div>
+        <div>
+          <h3>Da API para a Bronze</h3>
+          <p>2025 inteiro baixado da API do USGS em 12 fatias, cada uma conferida contra o contador da própria API, e o Auto Loader transformando os arquivos numa tabela Delta. O momento que fecha a aula é rodar a ingestão pela segunda vez e ver <strong>zero linhas novas</strong>.</p>
+        </div>
+      </article>
+
+      <article class="aula">
+        <div class="when"><b>03</b>25/11</div>
+        <div>
+          <h3>Silver e Gold: explodir, tipar, MERGE</h3>
+          <p>Uma linha da Bronze guarda um mês inteiro, e vira milhares de eventos. Data em milissegundos vira timestamp, o que não é terremoto vira decisão, e o <code>MERGE</code> pela versão mais nova garante que a revisão do sismólogo atualize, e não duplique. As tabelas Gold respondem as perguntas.</p>
+        </div>
+      </article>
+
+      <article class="aula">
+        <div class="when"><b>04</b>02/12</div>
+        <div>
+          <h3>Governança e o pipeline que roda sozinho</h3>
+          <p>Permissões por camada e máscara de coluna na prática. Os notebooks viram um Lakeflow Job com dependências, agendamento, retry e carga incremental com <code>updatedafter</code>. As tabelas Gold fecham o ciclo, e o projeto vai para o portfólio.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+
+  <section id="api">
+    <h2>07 &middot; Antes de ir embora</h2>
+    <p class="h2big">Testar a API da aula 2</p>
+    <p>Na aula 2, o notebook vai buscar os terremotos de 2025 direto na API do USGS. O Free Edition só deixa sair para alguns sites, então este teste de trinta segundos descobre agora, com uma semana de folga, quem vai precisar do plano B.</p>
+    <article class="step" data-id="s4" id="api-teste">
+      <div class="step-head">
+        <span class="step-n">05</span>
+        <div><p class="step-title">Testar a API</p><p class="step-sub">Um teste de 30 segundos que evita surpresa na aula 2</p></div>
+      </div>
+      <div class="step-body">
+        <p>Na aula 2, o Databricks vai buscar dados de terremotos na internet, numa API do serviço geológico dos Estados Unidos (USGS). O Free Edition só deixa sair para alguns sites. Este teste confirma que o da aula está liberado na <em>sua</em> conta.</p>
+
+        <p class="cmdlabel">Criar uma pasta para o curso</p>
+        <ol class="body">
+          <li>Na barra lateral, clique em <b>Workspace</b>.</li>
+          <li>Clique no botão <b>Create</b>, no canto superior direito, e escolha <b>Folder</b>.</li>
+          <li>Dê o nome <code>lakehouse-sismico</code> e confirme. Entre na pasta com um clique.</li>
+        </ol>
+
+        <p class="cmdlabel">Criar o notebook de teste</p>
+        <ol class="body">
+          <li>Dentro da pasta, clique de novo em <b>Create</b> e escolha <b>Notebook</b>.</li>
+          <li>O notebook abre com o nome <code>Untitled Notebook</code> e a data. Clique nesse nome, no topo, e troque por <code>00_teste_api</code>.</li>
+          <li>Confira, ao lado do nome, que a linguagem é <b>Python</b>. No canto superior direito, a computação aparece como <b>Serverless</b>. Não precisa mudar nada.</li>
+        </ol>
+
+        <p class="cmdlabel">Rodar o teste</p>
+        <ol class="body">
+          <li>Clique no botão <b>copiar</b> abaixo e cole dentro da primeira célula do notebook (a caixa de texto cinza).</li>
+          <li>Rode a célula: clique no botão <b>&#9654;</b> no canto esquerdo da célula, ou aperte <kbd>Shift+Enter</kbd> com o cursor dentro dela.</li>
+          <li>Na primeira vez, a computação demora alguns segundos para ligar. Espere o resultado aparecer logo abaixo da célula.</li>
+        </ol>
+        <div class="codewrap"><pre>import requests
+
+r = requests.get(
+    "https://earthquake.usgs.gov/fdsnws/event/1/count",
+    params={
+        "format": "geojson",
+        "starttime": "2025-07-01", "endtime": "2025-08-01",
+        "minmagnitude": 2.5,
+    },
+    timeout=30,
+)
+print(r.status_code, r.json())</pre><button class="copy" type="button">copiar</button></div>
+        <p>O resultado esperado é uma linha parecida com esta. O número do meio pode ser um pouco diferente, e está tudo bem:</p>
+        <pre><span class="ok">200 {'count': 4181, 'maxAllowed': 20000}</span></pre>
+        <p class="small">Em português: "200" quer dizer que a API respondeu, e "4181" é quantos terremotos de magnitude 2,5 ou mais aconteceram no mundo em julho de 2025.</p>
+
+        <div class="verify"><p class="vh">Confira</p><p><b>Começou com <code>200</code>?</b> Pronto: a sua conta fala com a API. Marque o passo como feito.<br><b>Apareceu um texto vermelho longo</b> com <code>ConnectionError</code>, <code>Max retries exceeded</code> ou <code>timed out</code>? É o Free Edition bloqueando o site, e não erro seu. Siga o plano B abaixo e avise no grupo da turma.</p></div>
+
+        <details id="plano-b">
+          <summary>Plano B: a API não respondeu</summary>
+          <p>Sem problema: os mesmos dados que a API devolveria estão prontos num arquivo zip. Você só precisa colocá-lo no volume <code>landing</code>.</p>
+          <p class="cmdlabel">1 &middot; baixar o arquivo</p>
+          <p>Entre em <a href="https://github.com/ckoliveiraa/lakehouse-sismico" target="_blank" rel="noopener">github.com/ckoliveiraa/lakehouse-sismico</a>, clique no arquivo <code>landing_2025.zip</code> e depois no botão de download (a setinha para baixo, à direita). São 2,4&nbsp;MB. <strong>Não descompacte</strong> no seu computador.</p>
+          <p class="cmdlabel">2 &middot; subir para o volume</p>
+          <ol class="body">
+            <li>Na barra lateral, clique em <b>Catalog</b>.</li>
+            <li>Abra <code>sismos</code> &rsaquo; <code>bronze</code> &rsaquo; <b>Volumes</b> &rsaquo; <code>landing</code>.</li>
+            <li>Clique em <b>Upload to this volume</b>, escolha o <code>landing_2025.zip</code> que você baixou e confirme.</li>
+          </ol>
+          <p class="cmdlabel">3 &middot; descompactar lá dentro</p>
+          <p>Volte ao notebook <code>00_teste_api</code>. Embaixo da primeira célula, passe o mouse e clique em <b>+ Code</b> para criar uma célula nova. Cole e rode:</p>
+          <div class="codewrap"><pre>import zipfile
+
+with zipfile.ZipFile("/Volumes/sismos/bronze/landing/landing_2025.zip") as z:
+    z.extractall("/Volumes/sismos/bronze/landing/")
+
+print(len(dbutils.fs.ls("/Volumes/sismos/bronze/landing/terremotos/ano=2025/")), "meses")</pre><button class="copy" type="button">copiar</button></div>
+          <div class="verify"><p class="vh">Deu certo se</p><p>Aparece <code>12 meses</code>. Na aula 2, quando a turma rodar o notebook que busca na API, você pula esse notebook e segue com o próximo: o resultado final é idêntico.</p></div>
+        </details>
+        <label class="mark"><input type="checkbox" id="chk-s4"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <div class="embreve">
+    <b>A construção do pipeline começa na aula 2.</b> O notebook de ingestão é escrito ao vivo, e o
+    código fica disponível aqui depois de cada encontro, para consulta. O caminho inteiro está
+    desenhado na <a href="#construir">arquitetura</a> e resumido em <a href="#encontros">os quatro encontros</a>.
+  </div>
+
+  <!-- OCULTO: material das aulas 2 a 4. Para liberar a aula 2, tire o hidden da div abaixo
+       (ou mova a section e1 para fora dela), descomente o item do menu e renumere. -->
+  <div class="oculto" hidden>
+  <section id="e1">
+    <p class="h2big">Aula 2 &mdash; Da API para a Bronze</p>
+    <p class="small" style="margin-top:-8px;margin-bottom:18px">Notebooks <code>01_extract</code> &middot; <code>02_bronze</code> &middot; o código escrito ao vivo, para consulta</p>
+
+    <article class="step" data-id="s5">
+      <div class="step-head">
+        <span class="step-n">05</span>
+        <div><p class="step-title">Extrair: da API para a landing</p><p class="step-sub">Notebook <code>01_extract</code> &middot; 24 chamadas, menos de 1 minuto</p></div>
+      </div>
+      <div class="step-body">
+        <p>As decisões que o código carrega, e que foram discutidas em aula:</p>
+        <ul class="body">
+          <li><strong>Landing antes da tabela.</strong> A resposta vai para o volume byte a byte. Se o USGS revisar o passado amanhã, você ainda tem o que ele disse hoje.</li>
+          <li><strong>Fatia por mês, conferida.</strong> A API devolve no máximo 20.000 eventos por consulta, e 2025 tem 29.265. Antes de cada mês, o <code>/count</code> diz quantos virão, e o código confere se vieram todos.</li>
+          <li><strong>Caminho determinístico.</strong> <code>ano=2025/mes=07.geojson</code>: rodar de novo sobrescreve, e nunca duplica.</li>
+          <li><strong>Falha que fica vermelha.</strong> Retry só para 429 e 5xx. Um 400 é pedido errado, e repetir não conserta. No fim, se algum mês falhou, o notebook termina com erro.</li>
+        </ul>
+        <div class="codewrap"><pre>import os
+import time
+import requests
+
+dbutils.widgets.text("ano", "2025")
+ANO = int(dbutils.widgets.get("ano"))
+
+API     = "https://earthquake.usgs.gov/fdsnws/event/1"
+LANDING = "/Volumes/sismos/bronze/landing/terremotos"
+FILTRO  = {"format": "geojson", "minmagnitude": 2.5, "orderby": "time-asc"}
+
+
+def chamar(endpoint, params, tentativas=5):
+    for i in range(tentativas):
+        r = requests.get(f"{API}/{endpoint}", params=params, timeout=60)
+        if r.status_code == 429 or r.status_code >= 500:
+            time.sleep(2 ** i)          <span class="c"># 1, 2, 4, 8, 16 s</span>
+            continue
+        r.raise_for_status()            <span class="c"># 400 e outros 4xx: falha na hora</span>
+        return r
+    r.raise_for_status()
+
+
+falhas, total = [], 0
+for mes in range(1, 13):
+    inicio = f"{ANO}-{mes:02d}-01"
+    fim    = f"{ANO + 1}-01-01" if mes == 12 else f"{ANO}-{mes + 1:02d}-01"
+    janela = {**FILTRO, "starttime": inicio, "endtime": fim}
+    try:
+        contagem = chamar("count", janela).json()
+        if contagem["count"] > contagem["maxAllowed"]:
+            raise ValueError(f"{contagem['count']} eventos passa do limite de {contagem['maxAllowed']}")
+
+        resposta  = chamar("query", janela)
+        recebidos = len(resposta.json()["features"])
+        if recebidos != contagem["count"]:
+            raise ValueError(f"/count disse {contagem['count']}, vieram {recebidos}")
+
+        os.makedirs(f"{LANDING}/ano={ANO}", exist_ok=True)
+        with open(f"{LANDING}/ano={ANO}/mes={mes:02d}.geojson", "wb") as f:
+            f.write(resposta.content)   <span class="c"># byte a byte, como veio</span>
+
+        total += recebidos
+        print(f"✓ {inicio[:7]}  {contagem['count']:>6,}  {recebidos:>6,}".replace(",", "."))
+    except Exception as erro:
+        falhas.append((inicio[:7], str(erro)))
+        print(f"✗ {inicio[:7]}  {erro}")
+    time.sleep(1)                       <span class="c"># a API é pública e compartilhada</span>
+
+print(f"total  {total:,} eventos".replace(",", "."))
+if falhas:
+    raise Exception(f"{len(falhas)} mês(es) falharam: {falhas}")</pre><button class="copy" type="button">copiar</button></div>
+        <pre>          /count  recebidos
+✓ 2025-01   2.258   2.258
+✓ 2025-02   2.186   2.186
+<span class="c">  ...</span>
+✓ 2025-07   4.181   4.181
+<span class="c">  ...</span>
+total  29.265 eventos</pre>
+        <div class="verify"><p class="vh">Confira</p><p>As duas colunas são iguais em todas as linhas. A pasta <code>terremotos/ano=2025/</code> tem 12 arquivos, e continua com 12 depois de rodar o notebook de novo. O seu total pode diferir em algumas unidades do anexo, porque o USGS ainda revisa 2025. O que precisa bater é o <code>/count</code> com os recebidos, na sua execução.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-s5"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="s6">
+      <div class="step-head">
+        <span class="step-n">06</span>
+        <div><p class="step-title">Carregar: da landing para a Bronze</p><p class="step-sub">Notebook <code>02_bronze</code> &middot; Auto Loader com <code>availableNow</code></p></div>
+      </div>
+      <div class="step-body">
+        <p>A Bronze guarda a resposta como veio, com duas colunas de auditoria e nenhuma transformação. Repare no <code>multiLine</code>: cada arquivo é <em>um</em> objeto GeoJSON quebrado em milhares de linhas. Sem essa opção, cada linha vira um registro corrompido.</p>
+        <div class="codewrap"><pre>from pyspark.sql import functions as F
+
+LANDING = "/Volumes/sismos/bronze/landing/terremotos/"
+CKPT    = "/Volumes/sismos/bronze/checkpoints/terremotos_raw"
+TABELA  = "sismos.bronze.terremotos_raw"
+
+antes = spark.table(TABELA).count() if spark.catalog.tableExists(TABELA) else 0
+
+consulta = (
+    spark.readStream.format("cloudFiles")
+        .option("cloudFiles.format", "json")
+        .option("multiLine", "true")              <span class="c"># 1 arquivo = 1 objeto</span>
+        .option("cloudFiles.schemaLocation", f"{CKPT}/_schema")
+        .load(LANDING)
+        .withColumn("_ingested_at", F.current_timestamp())
+        .withColumn("_source_file", F.col("_metadata.file_path"))
+    .writeStream
+        .option("checkpointLocation", CKPT)
+        .trigger(availableNow=True)              <span class="c"># processa o que há e para</span>
+        .toTable(TABELA)
+)
+consulta.awaitTermination()
+
+r = spark.table(TABELA).agg(F.count("*").alias("linhas"),
+                            F.sum(F.size("features")).alias("eventos")).first()
+print(TABELA)
+print(f"  nesta execução:     {r.linhas - antes} linhas")
+print(f"  total na tabela:    {r.linhas} linhas")
+print(f"  eventos (features): {r.eventos:,}".replace(",", "."))</pre><button class="copy" type="button">copiar</button></div>
+        <pre>sismos.bronze.terremotos_raw
+  nesta execução:     12 linhas
+  total na tabela:    12 linhas
+  eventos (features): 29.265</pre>
+        <div class="verify"><p class="vh">Confira: o momento da aula</p><p>Rode o notebook <strong>de novo</strong>: <code>nesta execução: 0 linhas</code>, com o total ainda em 12. O checkpoint lembra quais arquivos já foram lidos. É idempotência sem apagar nada, e é o que deixa o Job da aula 4 tentar de novo sozinho, de madrugada.</p></div>
+        <p class="cmdlabel">Olhar o dado no SQL editor</p>
+        <div class="codewrap"><pre>DESCRIBE sismos.bronze.terremotos_raw;
+
+SELECT f.properties.type AS tipo, count(*) AS eventos
+FROM (SELECT explode(features) AS f FROM sismos.bronze.terremotos_raw)
+GROUP BY ALL
+ORDER BY eventos DESC;</pre><button class="copy" type="button">copiar</button></div>
+        <p class="small">O <code>DESCRIBE</code> mostra <code>features</code> como <code>ARRAY</code> de <code>STRUCT</code>, igual à API, com os valores como texto: a Bronze não converte tipo. A segunda consulta mostra que nem todo evento é terremoto. Essa é a primeira decisão da Silver.</p>
+        <label class="mark"><input type="checkbox" id="chk-s6"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="e2">
+    <p class="h2big">Aula 3 &mdash; Silver e Gold</p>
+    <p class="small" style="margin-top:-8px;margin-bottom:18px">Notebooks <code>03_silver</code> &middot; <code>04_gold</code></p>
+    <article class="step" data-id="s7">
+      <div class="step-head">
+        <span class="step-n">07</span>
+        <div><p class="step-title">Explodir, tipar e fazer MERGE</p><p class="step-sub">12 respostas viram 29.265 eventos</p></div>
+      </div>
+      <div class="step-body">
+        <ol class="body">
+          <li><strong>Grão.</strong> <code>explode(features)</code>: uma linha por evento. A chave é o <code>id</code> do USGS.</li>
+          <li><strong>Tipo.</strong> <code>time</code> e <code>updated</code> chegam em milissegundos desde 1970 e viram <code>TIMESTAMP</code> em UTC. Magnitude e profundidade viram <code>DOUBLE</code>.</li>
+          <li><strong>Escopo.</strong> Os eventos que não são terremoto ficam, saem ou ganham uma coluna? Decisão escrita, com o número de linhas antes e depois.</li>
+          <li><strong>Versão.</strong> <code>MERGE INTO</code> pelo <code>id</code>, atualizando só quando o <code>updated</code> da origem for mais novo.</li>
+        </ol>
+        <label class="mark"><input type="checkbox" id="chk-s7"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="e3">
+    <p class="h2big">Aula 4 &mdash; Governança e o Job</p>
+    <p class="small" style="margin-top:-8px;margin-bottom:18px">Permissões &middot; Jobs &amp; Pipelines</p>
+    <article class="step" data-id="s8">
+      <div class="step-head">
+        <span class="step-n">08</span>
+        <div><p class="step-title">Quatro tarefas, um agendamento</p><p class="step-sub">01 &rarr; 02 &rarr; 03 &rarr; 04, todo dia às 06h</p></div>
+      </div>
+      <div class="step-body">
+        <p>Permissões por camada e uma máscara de coluna. Depois, os notebooks viram um Job com dependências, retry, alerta e carga incremental com <code>updatedafter</code>.</p>
+        <label class="mark"><input type="checkbox" id="chk-s8"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="contagens">
+    <h2>Anexo</h2>
+    <p class="h2big">Contagens esperadas</p>
+    <p>Medidas na API em <strong>06/11/2026</strong>, com cada mês conferido contra o <code>/count</code>. O USGS continua revisando 2025, então uma extração nova pode diferir em algumas unidades. Quem usar o plano B recebe exatamente estes números.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Arquivo na landing</th><th style="text-align:right">Eventos</th></tr></thead>
+        <tbody>
+          <tr><td class="term">ano=2025/mes=01.geojson</td><td class="num">2.258</td></tr>
+          <tr><td class="term">ano=2025/mes=02.geojson</td><td class="num">2.186</td></tr>
+          <tr><td class="term">ano=2025/mes=03.geojson</td><td class="num">2.238</td></tr>
+          <tr><td class="term">ano=2025/mes=04.geojson</td><td class="num">2.141</td></tr>
+          <tr><td class="term">ano=2025/mes=05.geojson</td><td class="num">2.022</td></tr>
+          <tr><td class="term">ano=2025/mes=06.geojson</td><td class="num">2.010</td></tr>
+          <tr><td class="term">ano=2025/mes=07.geojson</td><td class="num">4.181</td></tr>
+          <tr><td class="term">ano=2025/mes=08.geojson</td><td class="num">3.082</td></tr>
+          <tr><td class="term">ano=2025/mes=09.geojson</td><td class="num">2.293</td></tr>
+          <tr><td class="term">ano=2025/mes=10.geojson</td><td class="num">2.016</td></tr>
+          <tr><td class="term">ano=2025/mes=11.geojson</td><td class="num">1.948</td></tr>
+          <tr><td class="term">ano=2025/mes=12.geojson</td><td class="num">2.890</td></tr>
+          <tr><td class="term"><b>total</b></td><td class="num"><b>29.265</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Onde conferir</th><th style="text-align:right">Esperado</th></tr></thead>
+        <tbody>
+          <tr><td class="term">arquivos em landing/terremotos/</td><td class="num">12</td></tr>
+          <tr><td class="term">count(*) em bronze.terremotos_raw</td><td class="num">12</td></tr>
+          <tr><td class="term">sum(size(features))</td><td class="num">29.265</td></tr>
+          <tr><td class="term">linhas novas na 2ª execução da Bronze</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="desafios">
+    <h2>Para casa</h2>
+    <p class="h2big">Os desafios</p>
+    <p>A partir da aula 2, um desafio por aula, entregue no fim do encontro e corrigido ao vivo no começo do seguinte. Todos usam o que foi dado em aula, mas exigem um passo que <em>não</em> foi mostrado.</p>
+    <div class="desafios">
+      <article class="desafio">
+        <div class="de-n"><b>02</b>bronze</div>
+        <div>
+          <h3>Mesmo protocolo, outro sotaque</h3>
+          <p>O EMSC, o centro sismológico europeu-mediterrâneo, publica o seu catálogo no mesmo padrão FDSN: <code>https://www.seismicportal.eu/fdsnws/event/1</code>, com os mesmos endpoints <code>/count</code> e <code>/query</code>. Leve 2025 inteiro, magnitude &ge; 2,5, até <code>sismos.bronze.emsc_raw</code>.</p>
+          <p>O passo que não foi mostrado: <strong>não copie os notebooks</strong>. Transforme a extração e a carga em funções que recebem a fonte como parâmetro, e rode as duas pelo mesmo código. Vai descobrir que "mesmo padrão" não quer dizer "mesmo contrato". O <code>/count</code> do EMSC responde em XML se você não pedir JSON, e mesmo em JSON não diz qual é o limite. Os campos do evento têm outros nomes, e a data de revisão vem em outro formato. E tem a armadilha do checkpoint: descubra o que acontece se as duas fontes usarem o mesmo.</p>
+          <p class="entrega">Entrega: contagens das duas tabelas por mês, lado a lado (por que não batem?), e o <code>DESCRIBE HISTORY</code> de <code>emsc_raw</code> com a segunda execução sem linhas novas, no <a href="https://github.com/ckoliveiraa/lakehouse-sismico/issues/new?template=desafio-02.yml" target="_blank" rel="noopener">formulário de entrega</a>.</p>
+        </div>
+      </article>
+      <article class="desafio">
+        <div class="de-n"><b>03</b>silver</div>
+        <div>
+          <h3>O mesmo terremoto, dois catálogos</h3>
+          <p>Leve o EMSC para a Silver e encontre os eventos que estão nos dois catálogos. Não existe chave em comum: o casamento é por proximidade de tempo e de lugar. Decida, e justifique por escrito, a tolerância de cada um.</p>
+        </div>
+      </article>
+      <article class="desafio">
+        <div class="de-n"><b>04</b>job</div>
+        <div>
+          <h3>Fechar o ciclo</h3>
+          <p>Coloque o EMSC no Job, com carga incremental, e uma tarefa final de verificação que deixa o Job vermelho se alguma Gold vier vazia.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+  </div>
+  <!-- /OCULTO -->
+
+  <section id="erros">
+    <h2>A1 &middot; Anexo</h2>
+    <p class="h2big">Quando quebrar</p>
+
+    <details>
+      <summary><code>ConnectionError</code> ou <code>Max retries exceeded</code> na primeira chamada</summary>
+      <p>É o Free Edition bloqueando o domínio, e não erro no código. Siga o <a href="#plano-b">plano B do teste da API</a>: o zip com as mesmas respostas vai para a landing e, na aula 2, você continua a partir do <code>02_bronze</code>.</p>
+    </details>
+
+    <details>
+      <summary>A API respondeu <code>400 Bad Request</code></summary>
+      <p>Leia o corpo da resposta, porque o USGS explica o motivo em texto. Na maioria das vezes é consulta grande demais (<code>exceeds search limit of 20000</code>) ou data em formato errado. É exatamente o caso em que repetir não adianta. Por isso o notebook falha na hora, sem nova tentativa.</p>
+    </details>
+
+    <details>
+      <summary>A API respondeu <code>429</code> ou <code>503</code></summary>
+      <p>Chamadas demais em pouco tempo, ou servidor sobrecarregado. Lembre que no serverless a turma inteira pode estar saindo pelo mesmo endereço de rede. A nova tentativa com espera crescente do notebook resolve. Não tire a pausa de 1 segundo entre meses para "ir mais rápido".</p>
+    </details>
+
+
+
+
+
+
+    <details>
+      <summary>A computação desligou e não volta</summary>
+      <p>Você passou da cota diária do Free Edition. A computação volta no dia seguinte, e nada foi perdido: tabelas, volumes e notebooks continuam lá. Para não acontecer na véspera da entrega, não deixe célula pesada rodando em loop e prefira o SQL editor para olhar dado.</p>
+    </details>
+    <details>
+      <summary>O <code>RESTORE</code> trouxe a tabela errada</summary>
+      <p>O número da versão depende de quantas vezes cada bloco rodou. Antes de restaurar, olhe o <code>DESCRIBE HISTORY</code> e escolha a versão pela coluna <code>operation</code> e pelo horário, e não pelo número que o guia diz. Na vida real é sempre assim.</p>
+    </details>
+  </section>
+
+  <section id="comandos">
+    <h2>A2 &middot; Anexo</h2>
+    <p class="h2big">Caminhos e comandos</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Caminho ou comando</th><th>O que é</th></tr></thead>
+        <tbody>
+          <tr><td class="term">earthquake.usgs.gov/fdsnws/event/1/count</td><td>Quantos eventos uma consulta vai devolver</td></tr>
+          <tr><td class="term">earthquake.usgs.gov/fdsnws/event/1/query</td><td>Os eventos, em GeoJSON com <code>format=geojson</code></td></tr>
+          <tr><td class="term">/Volumes/sismos/bronze/landing/terremotos/</td><td>Respostas da API, <code>ano=/mes=.geojson</code></td></tr>
+          <tr><td class="term">/Volumes/sismos/bronze/checkpoints/</td><td>Memória do Auto Loader, uma pasta por tabela</td></tr>
+          <tr><td class="term">sismos.bronze.terremotos_raw</td><td>A Bronze da aula 1</td></tr>
+          <tr><td class="term">dbutils.fs.ls(caminho)</td><td>Lista arquivos de um volume</td></tr>
+          <tr><td class="term">dbutils.widgets.text("ano", "2025")</td><td>Parâmetro do notebook, que vira parâmetro do Job na aula 4</td></tr>
+          <tr><td class="term">DESCRIBE tabela</td><td>Colunas e tipos</td></tr>
+          <tr><td class="term">DESCRIBE HISTORY tabela</td><td>Uma linha por versão do Delta</td></tr>
+          <tr><td class="term">SELECT ... VERSION AS OF n</td><td>A tabela como era na versão <code>n</code></td></tr>
+          <tr><td class="term">RESTORE TABLE t TO VERSION AS OF n</td><td>Volta a tabela para a versão <code>n</code>, registrando uma versão nova</td></tr>
+          <tr><td class="term">DESCRIBE DETAIL tabela</td><td>Formato, localização e número de arquivos</td></tr>
+          <tr><td class="term">LIST '/Volumes/...'</td><td>Lista arquivos de um volume, pelo SQL</td></tr>
+          <tr><td class="term">SHOW GRANTS ON SCHEMA s</td><td>Quem pode o quê</td></tr>
+          <tr><td class="term">SHOW VOLUMES IN sismos.bronze</td><td>Volumes de um schema</td></tr>
+          <tr><td class="term">Ctrl+Enter</td><td>Roda a célula ou instrução atual</td></tr>
+          <tr><td class="term">Ctrl+A, Ctrl+Enter</td><td>No SQL editor, seleciona tudo e roda todas as instruções selecionadas</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Referência oficial: <a href="https://docs.databricks.com/aws/en/getting-started/free-edition-limitations" target="_blank" rel="noopener">limites do Free Edition</a>, <a href="https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/" target="_blank" rel="noopener">Auto Loader</a> e <a href="https://earthquake.usgs.gov/fdsnws/event/1/" target="_blank" rel="noopener">API de eventos do USGS</a>.</p>
+  </section>
+
+  <footer>
+    Lakehouse Sísmico &middot; Trilha Engenheiro de Dados Pleno &middot; Empregadados &middot; 4 encontros de 1h20.<br>
+    Dados: <a href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">U.S. Geological Survey</a>, domínio público.<br>
+    Seu progresso fica salvo neste navegador.
+  </footer>
+
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+  // Só os passos visíveis contam no progresso: as etapas ainda não liberadas
+  // ficam dentro de uma div [hidden], e contá-las deixaria a barra travada.
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"))
+    .filter(function(s){ return !s.closest("[hidden]"); });
+  var fill = document.getElementById("fill");
+  var pct = document.getElementById("pct");
+  var KEY = "sismos-progresso";
+
+  function load(){
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}"); }
+    catch(e){ return {}; }
+  }
+  function save(state){
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+  }
+  function paint(){
+    var done = 0;
+    steps.forEach(function(s){
+      var box = s.querySelector("input[type=checkbox]");
+      if (box.checked){ done++; s.classList.add("done"); }
+      else { s.classList.remove("done"); }
+    });
+    pct.textContent = done + "/" + steps.length;
+    fill.style.width = (steps.length ? (done / steps.length * 100) : 0) + "%";
+  }
+
+  var state = load();
+  steps.forEach(function(s){
+    var id = s.getAttribute("data-id");
+    var box = s.querySelector("input[type=checkbox]");
+    box.checked = !!state[id];
+    box.addEventListener("change", function(){
+      state[id] = box.checked;
+      save(state);
+      paint();
+    });
+  });
+  paint();
+
+  document.getElementById("reset").addEventListener("click", function(){
+    state = {};
+    save(state);
+    steps.forEach(function(s){ s.querySelector("input[type=checkbox]").checked = false; });
+    paint();
+  });
+
+  // copiar
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var pre = btn.parentNode.querySelector("pre");
+      var txt = pre.innerText.split("\n").filter(function(l){ return l.trim().indexOf("#") !== 0; }).join("\n").trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(function(){
+          btn.textContent = "copiado";
+          setTimeout(function(){ btn.textContent = "copiar"; }, 1600);
+        });
+      }
+    });
+  });
+
+  // tema
+  var TKEY = "sismos-tema";
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem(TKEY);
+    if (saved) root.setAttribute("data-theme", saved);
+  } catch(e){}
+  document.getElementById("theme").addEventListener("click", function(){
+    var cur = root.getAttribute("data-theme");
+    if (!cur) cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(TKEY, next); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>

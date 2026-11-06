@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lakehouse Sísmico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --paper:#eef1ee;
+  --surface:#f7f9f7;
+  --ink:#10171a;
+  --ink-2:#39474a;
+  --ink-3:#6b7b7c;
+  --line:#cdd6cf;
+  --accent:#1a6b52;
+  --amber:#a86e05;
+  --shadow:0 1px 2px rgba(16,23,26,.06),0 8px 24px -16px rgba(16,23,26,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1214;
+    --surface:#141c1f;
+    --ink:#e7eee9;
+    --ink-2:#b2c0ba;
+    --ink-3:#7d8d88;
+    --line:#2a383c;
+    --accent:#4fbf94;
+    --amber:#e0a800;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1214;
+  --surface:#141c1f;
+  --ink:#e7eee9;
+  --ink-2:#b2c0ba;
+  --ink-3:#7d8d88;
+  --line:#2a383c;
+  --accent:#4fbf94;
+  --amber:#e0a800;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:32px 16px;background:var(--paper);color:var(--ink);
+  font-family:"Source Serif 4",Georgia,serif;line-height:1.55;
+}
+main{width:100%;max-width:640px}
+h1{font-family:Archivo,system-ui,sans-serif;font-size:clamp(26px,5vw,34px);line-height:1.15;margin:0 0 8px}
+.lead{color:var(--ink-2);margin:0 0 28px}
+.aulas{display:flex;flex-direction:column;gap:12px}
+.aula{
+  display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:center;
+  padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow);color:inherit;text-decoration:none;transition:border-color .15s,transform .15s;
+}
+.aula:hover,.aula:focus-visible{border-color:var(--accent);transform:translateY(-1px);outline:none}
+.when{font-family:Archivo,system-ui,sans-serif;font-size:13px;color:var(--ink-3);border-right:1px solid var(--line);padding-right:12px}
+.when b{display:block;font-size:22px;color:var(--amber);line-height:1.1;font-weight:600}
+.aula h2{font-family:Archivo,system-ui,sans-serif;margin:0 0 4px;font-size:18px}
+.aula p{margin:0;font-size:15px;color:var(--ink-2)}
+.go{color:var(--accent);font-family:Archivo,system-ui,sans-serif;font-weight:600;font-size:14px;margin-top:6px;display:inline-block}
+.aula.soon{opacity:.6;pointer-events:none;box-shadow:none}
+.eyebrow{font-family:Archivo,system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 10px}
+.extra{margin:20px 0 0;font-size:15px;color:var(--ink-3)}
+.extra a{color:var(--accent);font-family:Archivo,system-ui,sans-serif;font-weight:600;text-decoration:none;margin-right:6px}
+@media (max-width:560px){
+  .aula{grid-template-columns:minmax(0,1fr);gap:8px}
+  .when{border-right:0;padding-right:0}
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Empregadados &middot; Engenheiro de Dados Pleno</p>
+  <h1>Lakehouse Sísmico em 4 Aulas</h1>
+  <p class="lead">Da API &agrave; camada Gold no Databricks Free Edition. Quartas, 19h. Escolha a aula para abrir o guia.</p>
+
+  <div class="aulas">
+    <a class="aula" href="aula-1.html">
+      <div class="when"><b>01</b>11/11</div>
+      <div>
+        <h2>O Databricks por dentro</h2>
+        <p>Conta no Free Edition, lakehouse e Delta Lake com uma tabela que volta no tempo, e o Unity Catalog com o seu primeiro catálogo.</p>
+        <span class="go">Abrir aula 1 &rarr;</span>
+      </div>
+    </a>
+
+    <div class="aula soon">
+      <div class="when"><b>02</b>18/11</div>
+      <div>
+        <h2>Da API para a Bronze</h2>
+        <p>2025 inteiro da API do USGS em 12 fatias conferidas contra o <code>/count</code>, e o Auto Loader gravando em Delta sem duplicar.</p>
+        <span class="go">Abre depois da aula 1</span>
+      </div>
+    </div>
+
+    <div class="aula soon">
+      <div class="when"><b>03</b>25/11</div>
+      <div>
+        <h2>Silver e Gold: explodir, tipar, MERGE</h2>
+        <p>Um m&ecirc;s vira milhares de eventos, o que n&atilde;o &eacute; terremoto vira decis&atilde;o e o MERGE guarda s&oacute; a revis&atilde;o mais nova.</p>
+        <span class="go">Abre depois da aula 2</span>
+      </div>
+    </div>
+
+    <div class="aula soon">
+      <div class="when"><b>04</b>02/12</div>
+      <div>
+        <h2>Governan&ccedil;a e o pipeline que roda sozinho</h2>
+        <p>Permiss&otilde;es e m&aacute;scara na pr&aacute;tica, Lakeflow Job com retry e carga incremental, atualizando a Gold todo dia.</p>
+        <span class="go">Abre depois da aula 3</span>
+      </div>
+    </div>
+  </div>
+  <p class="extra">Dados: <a href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">U.S. Geological Survey</a> <span>dom&iacute;nio p&uacute;blico</span></p>
+</main>
+</body>
+</html>

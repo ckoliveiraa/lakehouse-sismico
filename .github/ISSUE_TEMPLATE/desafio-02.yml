@@ -1,0 +1,70 @@
+name: "Desafio 2 — Mesmo protocolo, outro sotaque"
+description: Entrega da aula 2 (ingestão e Bronze) — o catálogo do EMSC pelas mesmas funções genéricas.
+title: "[Desafio 2] <seu nome>"
+labels: ["desafio-2"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Leve 2025 do catálogo do EMSC (FDSN) até `sismos.bronze.emsc_raw`, reaproveitando a extração e a carga como funções parametrizadas.
+        Enunciado completo no [guia do curso](https://ckoliveiraa.github.io/lakehouse-sismico/aula-1.html#desafios).
+
+        > ⚠️ Este repositório é público: a sua entrega fica visível para a turma. É de propósito — vamos ler em voz alta na correção.
+
+  - type: input
+    id: nome
+    attributes:
+      label: Nome
+      description: Como você quer ser chamado na correção.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contrato
+    attributes:
+      label: Diferenças de contrato entre USGS e EMSC
+      description: Uma tabela com o que muda entre as duas APIs (formato do /count, nomes de campo, datas, limites) e como as suas funções lidam com isso.
+    validations:
+      required: true
+
+  - type: textarea
+    id: contagens
+    attributes:
+      label: Prova 1 — contagens
+      description: Eventos por mês de `emsc_raw` e `terremotos_raw`, lado a lado. Por que não batem? Qual das duas está "certa"?
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: historico
+    attributes:
+      label: Prova 2 — DESCRIBE HISTORY
+      description: De `emsc_raw`, mostrando a segunda execução com zero linhas novas.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: checkpoint
+    attributes:
+      label: A armadilha do checkpoint
+      description: O que acontece se as duas fontes usarem o mesmo checkpoint? Explique com as suas palavras.
+    validations:
+      required: true
+
+  - type: input
+    id: repo
+    attributes:
+      label: Link dos notebooks (opcional)
+      description: Repositório seu no GitHub, se tiver.
+    validations:
+      required: false
+
+  - type: textarea
+    id: duvidas
+    attributes:
+      label: Onde travou / dúvidas (opcional)
+      description: Traga quebrado se não saiu — erro na tela é a parte mais útil da correção.
+    validations:
+      required: false

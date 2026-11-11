@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projeto Final</title>
+<meta name="description" content="Projeto final do Lakehouse Sísmico: calendário e prazo de entrega (15/12).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#eef1ee;
+  --surface:#f7f9f7;
+  --sunken:#e4e9e5;
+  --ink:#10171a;
+  --ink-2:#39474a;
+  --ink-3:#6b7b7c;
+  --line:#cdd6cf;
+  --accent:#1a6b52;
+  --accent-soft:#dcebe3;
+  --amber:#a86e05;
+  --amber-soft:#f6ebd2;
+  --shadow:0 1px 2px rgba(16,23,26,.06),0 8px 24px -16px rgba(16,23,26,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1214;
+    --surface:#141c1f;
+    --sunken:#1b2529;
+    --ink:#e7eee9;
+    --ink-2:#b2c0ba;
+    --ink-3:#7d8d88;
+    --line:#2a383c;
+    --accent:#4fbf94;
+    --accent-soft:#12302a;
+    --amber:#e0a800;
+    --amber-soft:#2e2510;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1214;
+  --surface:#141c1f;
+  --sunken:#1b2529;
+  --ink:#e7eee9;
+  --ink-2:#b2c0ba;
+  --ink-3:#7d8d88;
+  --line:#2a383c;
+  --accent:#4fbf94;
+  --accent-soft:#12302a;
+  --amber:#e0a800;
+  --amber-soft:#2e2510;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Source Serif 4",Georgia,serif;font-size:17px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.ui{font-family:Archivo,system-ui,sans-serif}
+code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em}
+a{color:var(--accent)}
+main{max-width:720px;margin:0 auto;padding:32px 16px 72px}
+.back{font-family:Archivo,sans-serif;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;margin-bottom:22px}
+.eyebrow{font-family:Archivo,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 12px}
+h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.06;margin:0 0 16px;text-wrap:balance}
+.lede{font-size:19px;color:var(--ink-2);margin:0 0 26px;text-wrap:pretty}
+
+.deadline{
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--amber);
+  border-radius:0 12px 12px 0;padding:18px 22px;box-shadow:var(--shadow);margin-bottom:12px;
+}
+.deadline .big{font-family:Archivo,sans-serif;font-weight:700;font-size:40px;line-height:1;color:var(--amber);letter-spacing:-.02em}
+.deadline .big small{display:block;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
+.deadline p{margin:0;font-size:15.5px;color:var(--ink-2)}
+.deadline b{color:var(--ink)}
+#countdown{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--accent);margin-top:6px;display:block}
+@media (max-width:520px){.deadline{grid-template-columns:minmax(0,1fr);gap:10px}}
+
+section{padding-top:34px}
+h2{font-size:13px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.h2big{font-family:Archivo,sans-serif;font-size:clamp(22px,3.4vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:0 0 14px;color:var(--ink)}
+p{margin:0 0 15px}
+li{margin-bottom:6px}
+
+.timeline{list-style:none;padding:0;margin:0;border-left:2px solid var(--line);margin-left:6px}
+.timeline li{position:relative;padding:0 0 16px 22px;margin:0}
+.timeline li::before{content:"";position:absolute;left:-7px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--ink-3)}
+.timeline li.done::before{background:var(--accent);border-color:var(--accent)}
+.timeline li.final::before{background:var(--amber);border-color:var(--amber)}
+.timeline .d{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink-3);display:block}
+.timeline li.final .d{color:var(--amber);font-weight:600}
+.timeline .t{font-family:Archivo,sans-serif;font-weight:600;font-size:15.5px}
+
+
+
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-family:Archivo,sans-serif;font-size:13px;color:var(--ink-3)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Todas as aulas</a>
+  <p class="eyebrow">Lakehouse Sísmico &middot; Projeto final</p>
+  <h1>Projeto final: entrega em 15/12</h1>
+  <p class="lede">Quatro aulas às quartas, 19h, e o prazo do projeto final logo depois.</p>
+
+  <div class="deadline">
+    <div class="big">15/12<small>terça &middot; até 23h59</small></div>
+    <div>
+      <p><b>Prazo final de entrega.</b> Seis dias depois da aula de dúvidas.</p>
+      <span id="countdown"></span>
+    </div>
+  </div>
+
+  <section id="calendario">
+    <h2>01 &middot; Calendário</h2>
+    <p class="h2big">Datas do curso</p>
+    <ol class="timeline">
+      <li class="done"><span class="d">11/11 &middot; qua</span><span class="t">Aula 1: o Databricks por dentro</span></li>
+      <li><span class="d">18/11 &middot; qua</span><span class="t">Aula 2: da API para a Bronze</span></li>
+      <li><span class="d">25/11 &middot; qua</span><span class="t">Aula 3: Silver e Gold</span></li>
+      <li><span class="d">02/12 &middot; qua</span><span class="t">Aula 4: governança e Job</span></li>
+      <li><span class="d">09/12 &middot; qua</span><span class="t">Aula de dúvidas</span></li>
+      <li class="final"><span class="d">15/12 &middot; ter</span><span class="t">Entrega do projeto final</span></li>
+    </ol>
+  </section>
+
+  <footer>Dados: <a href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">U.S. Geological Survey</a>, domínio público.</footer>
+</main>
+<script>
+(function(){
+  var el=document.getElementById('countdown');
+  var end=new Date('2026-12-15T23:59:00-03:00');
+  var days=Math.ceil((end-new Date())/86400000);
+  el.textContent=days>1?'Faltam '+days+' dias':days===1?'Último dia':'Prazo encerrado';
+})();
+</script>
+</body>
+</html>

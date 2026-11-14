@@ -14,6 +14,7 @@ Este repositório guarda **só o material de apoio**. O código você escreve du
 | Arquivo | Para quê |
 |---|---|
 | `landing_2025.zip` | **Plano B.** As 12 respostas da API (2025, magnitude ≥ 2,5), byte a byte, no layout `terremotos/ano=2025/mes=MM.geojson`. Use só se o seu workspace não conseguir chamar a API. |
+| `notebooks/01_extract.py`, `notebooks/02_bronze.py` | Gabarito da aula 2, no formato de notebook do Databricks (baixe e importe em *Workspace › Import*). Publicado depois do encontro. |
 | `scripts/gerar_snapshot.py` | Como o plano B foi gerado: mesmos parâmetros do notebook da aula, com cada mês conferido contra o `/count`. |
 
 ## Contagens esperadas

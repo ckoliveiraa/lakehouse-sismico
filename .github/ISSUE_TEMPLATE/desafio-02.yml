@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Leve 2025 do catálogo do EMSC (FDSN) até `sismos.bronze.emsc_raw`, reaproveitando a extração e a carga como funções parametrizadas.
-        Enunciado completo no [guia do curso](https://ckoliveiraa.github.io/lakehouse-sismico/aula-1.html#desafios).
+        Enunciado completo no [guia do curso](https://ckoliveiraa.github.io/lakehouse-sismico/aula-2.html#desafio).
 
         > ⚠️ Este repositório é público: a sua entrega fica visível para a turma. É de propósito — vamos ler em voz alta na correção.
 

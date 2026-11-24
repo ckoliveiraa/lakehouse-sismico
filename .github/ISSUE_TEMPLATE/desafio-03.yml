@@ -1,0 +1,64 @@
+name: "Desafio 3 — As outras perguntas, só em SQL"
+description: Entrega da aula 3 (Gold) — terremotos por magnitude e por região, com as duas fontes, num notebook SQL.
+title: "[Desafio 3] <seu nome>"
+labels: ["desafio-3"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Crie o notebook `05_gold_desafio`, só com células SQL, gerando `sismos.gold.terremotos_por_magnitude` e `sismos.gold.terremotos_por_regiao` a partir de `sismos.silver.eventos`, as duas com a `fonte` no grão.
+        Enunciado completo no [guia do curso](https://ckoliveiraa.github.io/lakehouse-sismico/aula-3.html#desafio).
+
+        > ⚠️ Este repositório é público: a sua entrega fica visível para a turma. É de propósito — vamos ler em voz alta na correção.
+
+  - type: input
+    id: nome
+    attributes:
+      label: Nome
+      description: Como você quer ser chamado na correção.
+    validations:
+      required: true
+
+  - type: textarea
+    id: sql
+    attributes:
+      label: O notebook
+      description: O SQL das células do `05_gold_desafio` (ou o link, se estiver num repositório seu).
+      render: sql
+    validations:
+      required: true
+
+  - type: textarea
+    id: magnitude
+    attributes:
+      label: Prova 1 — com que força
+      description: "`terremotos_por_magnitude` com as fontes lado a lado (grau, usgs, emsc). A partir de que grau cada catálogo obedece à lei de Gutenberg-Richter (cada grau a menos, uns dez vezes mais terremotos)? Por que um obedece antes do outro?"
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: regiao
+    attributes:
+      label: Prova 2 — onde
+      description: Top 5 regiões por terremotos de magnitude 5 ou mais, em cada fonte. Como você tirou a região do `lugar` de cada uma, e o que ficou imperfeito de propósito?
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: conferencia
+    attributes:
+      label: Prova 3 — conferência
+      description: Por fonte, a soma de `terremotos` em cada uma das três Gold e a contagem de `earthquake` na Silver. Têm que ser iguais.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: duvidas
+    attributes:
+      label: Onde travou / dúvidas (opcional)
+      description: Traga quebrado se não saiu — erro na tela é a parte mais útil da correção.
+    validations:
+      required: false

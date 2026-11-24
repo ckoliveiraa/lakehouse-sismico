@@ -1,0 +1,1449 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lakehouse Sísmico</title>
+<meta name="description" content="Aula 3: Silver e Gold — explode, tipos e MERGE pela revisão mais nova na Silver, e três tabelas Gold que respondem onde, com que força e com que frequência o chão treme.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#eef1ee;
+  --surface:#f7f9f7;
+  --sunken:#e4e9e5;
+  --ink:#10171a;
+  --ink-2:#39474a;
+  --ink-3:#6b7b7c;
+  --line:#cdd6cf;
+  --accent:#1a6b52;
+  --accent-soft:#dcebe3;
+  --amber:#a86e05;
+  --amber-soft:#f6ebd2;
+  --danger:#9b3a25;
+  --code-bg:#12191c;
+  --code-ink:#dce7e0;
+  --shadow:0 1px 2px rgba(16,23,26,.06),0 8px 24px -16px rgba(16,23,26,.3);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1214;
+    --surface:#141c1f;
+    --sunken:#1b2529;
+    --ink:#e7eee9;
+    --ink-2:#b2c0ba;
+    --ink-3:#7d8d88;
+    --line:#2a383c;
+    --accent:#4fbf94;
+    --accent-soft:#12302a;
+    --amber:#e0a800;
+    --amber-soft:#2e2510;
+    --danger:#e0805f;
+    --code-bg:#080d0f;
+    --code-ink:#cfded6;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1214;
+  --surface:#141c1f;
+  --sunken:#1b2529;
+  --ink:#e7eee9;
+  --ink-2:#b2c0ba;
+  --ink-3:#7d8d88;
+  --line:#2a383c;
+  --accent:#4fbf94;
+  --accent-soft:#12302a;
+  --amber:#e0a800;
+  --amber-soft:#2e2510;
+  --danger:#e0805f;
+  --code-bg:#080d0f;
+  --code-ink:#cfded6;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,.ui{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+code,kbd,pre,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+a{color:var(--accent)}
+
+/* ---------- shell ---------- */
+.shell{
+  display:grid;
+  grid-template-columns:262px minmax(0,1fr);
+  gap:44px;
+  max-width:1180px;
+  margin:0 auto;
+  padding-inline:20px;
+  padding-block:0 72px;
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+}
+
+/* ---------- sidebar ---------- */
+.side{
+  position:sticky;
+  top:0;
+  align-self:start;
+  max-height:100vh;
+  overflow-y:auto;
+  padding-block:28px 32px;
+  font-family:Archivo,sans-serif;
+  font-size:13.5px;
+}
+@media (max-width:900px){
+  .side{position:static;max-height:none;border-bottom:1px solid var(--line);margin-bottom:8px}
+}
+.side .brand{
+  font-weight:700;letter-spacing:-.01em;font-size:15px;color:var(--ink);
+  display:flex;align-items:center;gap:8px;margin-bottom:18px;
+}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none}
+.prog-wrap{margin-bottom:20px}
+.prog-label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px;
+}
+.prog-label b{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--accent);font-variant-numeric:tabular-nums}
+.prog-track{height:4px;background:var(--sunken);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;width:0;background:var(--accent);transition:width .35s ease}
+nav ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav a{
+  display:flex;gap:9px;align-items:baseline;
+  text-decoration:none;color:var(--ink-2);
+  padding:5px 8px;border-radius:5px;line-height:1.35;
+}
+nav a:hover{background:var(--sunken);color:var(--ink)}
+nav a .n{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-3);flex:none;width:18px}
+.side-foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:8px}
+.tbtn{
+  font-family:Archivo,sans-serif;font-size:12px;
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;
+}
+.tbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+/* ---------- main ---------- */
+main{padding-block:28px 0;min-width:0}
+.wrap{max-width:68ch}
+
+/* hero */
+.eyebrow{
+  font-family:Archivo,sans-serif;font-size:11.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 14px;
+}
+h1{
+  font-size:clamp(34px,5.2vw,50px);font-weight:700;letter-spacing:-.025em;
+  line-height:1.04;margin:0 0 18px;text-wrap:balance;
+}
+.lede{font-size:20px;line-height:1.55;color:var(--ink-2);margin:0 0 26px;text-wrap:pretty}
+.facts{
+  display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);overflow:hidden;margin-bottom:40px;
+}
+.fact{flex:1 1 130px;padding:13px 16px;border-right:1px solid var(--line)}
+.fact:last-child{border-right:0}
+@media (max-width:560px){.fact{flex:1 1 50%;border-bottom:1px solid var(--line)}}
+.fact dt{
+  font-family:Archivo,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 3px;
+}
+.fact dd{margin:0;font-family:Archivo,sans-serif;font-weight:600;font-size:15px;color:var(--ink)}
+
+/* sections */
+section{padding-block:34px 0;scroll-margin-top:16px}
+h2{
+  font-size:13px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 6px;
+}
+.h2big{
+  font-family:Archivo,sans-serif;font-size:clamp(24px,3.4vw,31px);font-weight:700;
+  letter-spacing:-.02em;line-height:1.15;margin:0 0 16px;color:var(--ink);text-wrap:balance;
+}
+h3{font-size:19px;font-weight:600;letter-spacing:-.01em;margin:26px 0 8px}
+p{margin:0 0 15px}
+ul,ol.body{padding-left:20px;margin:0 0 15px}
+li{margin-bottom:6px}
+strong{font-weight:600}
+.small{font-size:15px;color:var(--ink-2)}
+
+/* pipeline diagram */
+.pipe{
+  display:flex;flex-direction:column;gap:0;margin:0 0 12px;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:20px;box-shadow:var(--shadow);
+}
+.layer{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+@media (max-width:520px){.layer{grid-template-columns:minmax(0,1fr);gap:4px}}
+.layer .tag{
+  font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+  padding:5px 8px;border-radius:5px;text-align:center;
+  background:var(--sunken);color:var(--ink-2);
+}
+.layer.l-raw .tag{background:var(--sunken);color:var(--ink-2)}
+.layer.l-ref .tag{background:var(--amber-soft);color:var(--amber)}
+.layer.l-mart .tag{background:var(--accent-soft);color:var(--accent)}
+.layer .desc{font-size:15px;color:var(--ink-2)}
+.layer .desc b{color:var(--ink);font-family:Archivo,sans-serif;font-weight:600}
+.arrow{
+  display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;
+  padding:7px 0;align-items:center;
+}
+@media (max-width:520px){.arrow{grid-template-columns:minmax(0,1fr)}.arrow .stem{display:none}}
+.arrow .stem{display:flex;justify-content:center;color:var(--ink-3);font-size:14px;line-height:1}
+.arrow .what{
+  font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-3);
+}
+.arrow .what em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* steps */
+.step{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:22px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.step.done{border-color:var(--accent);background:var(--surface)}
+.step-head{display:flex;gap:13px;align-items:flex-start;margin-bottom:4px}
+.step-n{
+  font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;
+  background:var(--amber-soft);color:var(--amber);
+  border-radius:6px;padding:4px 8px;flex:none;margin-top:3px;
+}
+.step.done .step-n{background:var(--accent-soft);color:var(--accent)}
+.step-title{font-family:Archivo,sans-serif;font-weight:600;font-size:20px;letter-spacing:-.01em;margin:0;line-height:1.25}
+.step-sub{font-size:14.5px;color:var(--ink-3);margin:2px 0 0;font-family:Archivo,sans-serif}
+.step-body{margin-top:14px}
+.step-body > :last-child{margin-bottom:0}
+
+/* figura / diagrama */
+.fig{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:22px 20px 16px;margin:0 0 14px;box-shadow:var(--shadow);
+}
+.fig svg{display:block;width:100%;height:auto}
+.fig-scroll{overflow-x:auto;padding-bottom:4px}
+.fig-scroll svg{min-width:660px}
+.fig-cap{
+  font-size:13.5px;color:var(--ink-3);margin:14px 0 0;text-align:center;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+
+/* duas colunas comparativas */
+.versus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 16px}
+@media (max-width:620px){.versus{grid-template-columns:minmax(0,1fr)}}
+.vs-card{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:18px 20px;
+}
+.vs-card.bad{border-color:var(--danger)}
+.vs-card.good{border-color:var(--accent)}
+.vs-h{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;margin:0 0 10px;
+}
+.vs-card.bad .vs-h{color:var(--danger)}
+.vs-card.good .vs-h{color:var(--accent)}
+.vs-flow{
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--ink-2);
+  margin:0 0 12px;line-height:1.9;
+}
+.vs-card p{font-size:15px;color:var(--ink-2)}
+.vs-card p:last-child{margin-bottom:0}
+
+/* spec */
+.spec{
+  border:1px solid var(--line);border-radius:12px;background:var(--sunken);
+  padding:20px 22px;margin-bottom:16px;
+}
+.spec-h{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--amber);margin:0 0 10px;
+}
+.spec ol{margin-bottom:0}
+.spec li{margin-bottom:10px;font-size:15.5px}
+.spec li:last-child{margin-bottom:0}
+.spec-foot{
+  font-size:14.5px;color:var(--ink-3);margin:14px 0 0;
+  padding-top:12px;border-top:1px solid var(--line);
+}
+
+/* spec colapsavel */
+details.spec-det{padding:0;margin-bottom:16px}
+details.spec-det > summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  margin:0;padding:16px 22px;
+}
+details.spec-det > summary::-webkit-details-marker{display:none}
+details.spec-det > summary::before{
+  content:"";width:0;height:0;flex:none;
+  border-left:5px solid currentColor;border-top:4px solid transparent;
+  border-bottom:4px solid transparent;transition:transform .15s ease;
+}
+details.spec-det[open] > summary::before{transform:rotate(90deg)}
+details.spec-det > summary:hover{background:var(--line);border-radius:12px}
+details.spec-det[open] > summary:hover{border-radius:12px 12px 0 0}
+.spec-cue{
+  margin-left:auto;font-size:10px;letter-spacing:.09em;color:var(--ink-3);
+}
+.spec-cue::after{content:"abrir"}
+details.spec-det[open] .spec-cue::after{content:"fechar"}
+details.spec-det > :not(summary){margin-left:22px;margin-right:22px}
+details.spec-det > :last-child{margin-bottom:20px}
+
+/* code */
+pre{
+  background:var(--code-bg);color:var(--code-ink);
+  border-radius:8px;padding:13px 15px;overflow-x:auto;
+  font-size:13.5px;line-height:1.6;margin:0 0 14px;
+}
+pre .c{color:#7d8d88}
+pre .ok{color:#4fbf94}
+code:not(pre code){
+  background:var(--sunken);border-radius:4px;padding:1px 5px;font-size:.87em;color:var(--ink);
+}
+.cmdlabel{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 6px;
+}
+.codewrap{position:relative}
+.copy{
+  position:absolute;top:8px;right:8px;
+  font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.04em;
+  background:rgba(255,255,255,.08);color:#cfded6;
+  border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:3px 8px;cursor:pointer;
+}
+.copy:hover{background:rgba(255,255,255,.16)}
+
+/* verify block */
+.verify{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  border-radius:0 8px 8px 0;padding:12px 15px;margin:0 0 14px;
+}
+.verify .vh{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 6px;
+}
+.verify p,.verify ul{margin-bottom:0;font-size:15px}
+.note{
+  border-left:3px solid var(--amber);background:var(--amber-soft);
+  border-radius:0 8px 8px 0;padding:12px 15px;margin:0 0 14px;font-size:15px;
+}
+.note b{font-family:Archivo,sans-serif}
+.note > :last-child{margin-bottom:0}
+
+/* checkbox */
+.mark{
+  display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--line);
+  font-family:Archivo,sans-serif;font-size:14px;color:var(--ink-3);cursor:pointer;user-select:none;
+}
+.mark input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:none}
+.step.done .mark{color:var(--accent);font-weight:600}
+
+/* aulas */
+.aulas{display:flex;flex-direction:column;gap:12px;margin-bottom:8px}
+.aula{
+  display:grid;grid-template-columns:62px minmax(0,1fr);gap:16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px;
+}
+@media (max-width:560px){.aula{grid-template-columns:minmax(0,1fr);gap:8px}}
+.aula .when{
+  font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-3);
+  border-right:1px solid var(--line);padding-right:12px;
+}
+@media (max-width:560px){.aula .when{border-right:0;padding-right:0}}
+.aula .when b{display:block;font-size:22px;color:var(--amber);line-height:1.1;font-weight:600}
+.aula h3{margin:0 0 6px;font-size:18px}
+.aula p{font-size:15px;margin-bottom:10px;color:var(--ink-2)}
+.chal{
+  font-size:14.5px;background:var(--sunken);border-radius:7px;padding:9px 12px;color:var(--ink-2);
+}
+.chal b{font-family:Archivo,sans-serif;color:var(--ink);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+
+/* desafios */
+[hidden]{display:none!important}
+.embreve{
+  border:1px dashed var(--line);border-radius:12px;background:var(--sunken);
+  padding:16px 20px;margin:0 0 16px;font-size:15px;color:var(--ink-3);
+}
+.embreve b{font-family:Archivo,sans-serif;color:var(--ink-2)}
+.desafios{display:flex;flex-direction:column;gap:12px}
+.desafio{
+  display:grid;grid-template-columns:76px minmax(0,1fr);gap:18px;
+  border:1px solid var(--line);border-left:3px solid var(--amber);
+  border-radius:0 12px 12px 0;background:var(--surface);padding:18px 20px;
+}
+@media (max-width:560px){.desafio{grid-template-columns:minmax(0,1fr);gap:6px}}
+.desafio .de-n{
+  font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.desafio .de-n b{display:block;font-size:21px;color:var(--amber);line-height:1.1;letter-spacing:0}
+.desafio h3{margin:0 0 6px;font-size:17px}
+.desafio p{font-size:15.5px;margin-bottom:0;color:var(--ink-2)}
+.desafio p + p{margin-top:8px}
+.desafio .entrega-ex{
+  font-size:13px;color:var(--ink-3);margin-top:8px;
+}
+.desafio .entrega-ex code{font-size:12.5px;line-height:1.7}
+.desafio .entrega{
+  font-family:Archivo,sans-serif;font-size:13px;color:var(--ink-3);
+  margin-top:9px;padding-top:9px;border-top:1px solid var(--line);
+}
+
+/* clock bar */
+.clock{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:6px 0 14px;font-family:Archivo,sans-serif;font-size:11px}
+.clock span{display:flex;align-items:center;justify-content:center;color:#fff;white-space:nowrap;overflow:hidden}
+.c1{background:var(--ink-3)}
+.c2{background:var(--accent)}
+.c3{background:var(--amber)}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:0 0 16px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:0}
+th{
+  font-family:Archivo,sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3);background:var(--sunken);
+}
+td.num{text-align:right;font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+td.term{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink);white-space:nowrap}
+
+details{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:12px 16px;margin-bottom:9px}
+summary{font-family:Archivo,sans-serif;font-weight:600;font-size:16px;cursor:pointer;color:var(--ink)}
+summary::marker{color:var(--ink-3)}
+details[open] summary{margin-bottom:9px}
+details p:last-child{margin-bottom:0}
+
+footer{
+  margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
+  font-family:Archivo,sans-serif;font-size:13px;color:var(--ink-3);
+}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+
+/* ---------- extras: lakehouse ---------- */
+.layer.l-bronze .tag{background:var(--surface);color:var(--ink-2);border:1px solid var(--line)}
+.vs-card .vs-tag{font-family:"JetBrains Mono",monospace;font-size:34px;font-weight:600;letter-spacing:.04em;line-height:1;margin:0 0 4px}
+.vs-card.bad .vs-tag{color:var(--danger)}
+.vs-card.good .vs-tag{color:var(--accent)}
+.vs-card .vs-tag-sub{font-family:Archivo,sans-serif;font-size:12.5px;letter-spacing:.06em;color:var(--ink-3);margin:0 0 12px}
+.ia-err td:first-child{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--danger);white-space:nowrap}
+
+/* ---------- extras: aula 2 ---------- */
+.side .back{display:inline-block;margin-bottom:14px;color:var(--ink-3);text-decoration:none;font-size:12.5px}
+.side .back:hover{color:var(--accent)}
+pre .k{color:#e0a800}
+pre .s{color:#8fc7ff}
+pre .hl{background:rgba(224,168,0,.16);border-radius:3px}
+.anat{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;margin:0 0 16px}
+@media (max-width:760px){.anat{grid-template-columns:minmax(0,1fr)}}
+.anat pre{margin:0;font-size:12.5px;height:100%}
+.anat ol{margin:0;padding-left:20px;font-size:15px}
+.anat li{margin-bottom:9px}
+.anat li b{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:600}
+.pre-req{list-style:none;padding:0;margin:0 0 14px}
+.pre-req li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:15.5px}
+.pre-req li:last-child{border-bottom:0}
+.pre-req .ck{font-family:"JetBrains Mono",monospace;color:var(--accent);flex:none}
+
+/* ---------- extras: aula 3 ---------- */
+.promessas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+@media (max-width:620px){.promessas{grid-template-columns:minmax(0,1fr)}}
+.promessa{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px 16px}
+.promessa .pn{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber);font-weight:600;letter-spacing:.06em}
+.promessa h4{margin:2px 0 4px;font-size:16px}
+.promessa p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.wrapterm td.term{white-space:normal;word-break:break-word}
+.mres th{font-size:10px;letter-spacing:.02em;text-transform:none}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<aside class="side">
+  <a class="back" href="index.html">&larr; Todas as aulas</a>
+  <div class="brand"><span class="dot"></span>Lakehouse Sísmico</div>
+
+  <div class="prog-wrap">
+    <div class="prog-label"><span>Seu progresso</span><b id="pct">0/9</b></div>
+    <div class="prog-track"><div class="prog-fill" id="fill"></div></div>
+  </div>
+
+  <nav>
+    <ol>
+      <li><a href="#onde"><span class="n">00</span>Onde paramos</a></li>
+      <li><a href="#bronze-unica"><span class="n">01</span>Desafio 2: uma Bronze só</a></li>
+      <li><a href="#pratica-bronze-unica"><span class="n">&middot;</span>Prática: bronze_ingestao</a></li>
+      <li><a href="#bundles"><span class="n">02</span>Bundles e CLI</a></li>
+      <li><a href="#pratica-bundle"><span class="n">&middot;</span>Prática: deploy pelo terminal</a></li>
+      <li><a href="#silver"><span class="n">03</span>O que a Silver promete</a></li>
+      <li><a href="#merge"><span class="n">04</span>MERGE: atualizar sem duplicar</a></li>
+      <li><a href="#pratica-silver"><span class="n">&middot;</span>Prática: 03_silver</a></li>
+      <li><a href="#pratica-zero"><span class="n">&middot;</span>Prática: zero linhas mexidas</a></li>
+      <li><a href="#pratica-revisao"><span class="n">&middot;</span>Prática: uma revisão chegando</a></li>
+      <li><a href="#pratica-emsc"><span class="n">&middot;</span>Prática: a segunda fonte</a></li>
+      <li><a href="#gold"><span class="n">05</span>Gold: as fontes lado a lado</a></li>
+      <li><a href="#pratica-gold"><span class="n">&middot;</span>Prática: 04_gold</a></li>
+      <li><a href="#pratica-pipeline"><span class="n">&middot;</span>Prática: o pipeline pelo terminal</a></li>
+      <li><a href="#desafio"><span class="n">06</span>Desafio 3</a></li>
+      <li><a href="#contagens"><span class="n">A0</span>Contagens esperadas</a></li>
+      <li><a href="#erros"><span class="n">A1</span>Quando quebrar</a></li>
+      <li><a href="#comandos"><span class="n">A2</span>Comandos</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="tbtn" id="theme" type="button">Tema</button>
+    <button class="tbtn" id="reset" type="button">Zerar progresso</button>
+  </div>
+</aside>
+
+<main>
+<div class="wrap">
+
+  <p class="eyebrow">Trilha Engenheiro de Dados Pleno &middot; Aula 3 de 4 &middot; 25/11</p>
+  <h1>Silver e Gold: duas fontes, um contrato, e a primeira resposta</h1>
+  <p class="lede">A aula começa arrumando a casa: o desafio 2 mostrou que copiar notebook por fonte não escala, e a Bronze passa a ter um notebook só por tópico, com a fonte como parâmetro. Depois, o mesmo pipeline sai do clique e vira código, com bundle e CLI, que é também a porta por onde um agente opera o Databricks. E aí o dado vira informação: USGS e EMSC na mesma Silver, cada evento numa linha, com data de verdade e o mesmo contrato de colunas, atualizado por um <code>MERGE</code> que nunca deixa o passado sobrescrever o presente. Na Gold, uma tabela em aula, com as duas fontes lado a lado. As outras ficam para o desafio, em SQL.</p>
+
+  <dl class="facts">
+    <div class="fact"><dt>Notebooks</dt><dd class="mono">bronze_ingestao &middot; 03_silver &middot; 04_gold</dd></div>
+    <div class="fact"><dt>Bundle</dt><dd class="mono">pipeline_terremotos &middot; 5 tasks</dd></div>
+    <div class="fact"><dt>Silver</dt><dd class="mono">usgs 29.265 &middot; emsc 79.492</dd></div>
+    <div class="fact"><dt>2º MERGE</dt><dd class="mono">0 linhas mexidas</dd></div>
+    <div class="fact"><dt>Gold</dt><dd>terremotos_por_mes, por fonte &middot; as demais no desafio</dd></div>
+  </dl>
+
+  <section id="onde">
+    <h2>00 &middot; O ponto de partida</h2>
+    <p class="h2big">Onde paramos</p>
+    <p>Na aula 2, a API virou doze arquivos na landing, e os arquivos viraram doze linhas na Bronze, cada uma com um mês inteiro de eventos dentro de um array. No desafio 2, uma segunda fonte, o EMSC, chegou do mesmo jeito. Hoje a gente arruma a Bronze para receber quantas fontes vierem, tira o pipeline do clique e constrói os dois andares de cima.</p>
+
+    <div class="pipe">
+      <div class="layer l-bronze">
+        <span class="tag">bronze</span>
+        <span class="desc"><b>bronze_ingestao</b>, um notebook para o tópico <code>terremotos</code>: <code>fonte=usgs</code> grava <b>usgs_raw</b>, <code>fonte=emsc</code> grava <b>emsc_raw</b>. Deploy e execução pelo bundle.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">03_silver &middot; <em>PySpark</em>, uma execução por fonte: explode, traduz para o mesmo contrato e faz MERGE pela revisão mais nova</span></div>
+      <div class="layer l-ref">
+        <span class="tag">silver</span>
+        <span class="desc"><b>eventos</b>: uma linha por evento e por fonte, chave <code>(fonte, id)</code>. USGS 29.265, EMSC 79.492, mesmas colunas.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what">04_gold &middot; <em>SQL</em> filtra terremoto, agrega por mês e fonte</span></div>
+      <div class="layer l-mart">
+        <span class="tag">gold</span>
+        <span class="desc"><b>terremotos_por_mes</b> em aula. Por magnitude e por região: desafio 3, num notebook SQL.</span>
+      </div>
+      <div class="arrow"><span class="stem">&darr;</span><span class="what" style="color:var(--ink-3)">Job diário, permissões e carga incremental &middot; aula 4</span></div>
+    </div>
+
+    <div class="clock">
+      <span class="c1" style="flex:1 1 19%">desafio 2 &middot; Bronze 15min</span>
+      <span class="c1" style="flex:1 1 19%;background:#5b4a8a">bundle &middot; CLI 15min</span>
+      <span class="c2" style="flex:1 1 37%">Silver e MERGE 30min</span>
+      <span class="c2" style="flex:1 1 19%;background:#14573f">Gold 15min</span>
+      <span class="c3" style="flex:1 1 6%">5</span>
+    </div>
+    <p class="small">Os primeiros 15 minutos são a correção ao vivo do desafio 2: as diferenças de contrato entre USGS e EMSC, as contagens que não batem, a armadilha do checkpoint e o que fica como regra. Deixe a sua entrega aberta.</p>
+
+    <article class="step" data-id="a3s0" id="pre-requisitos">
+      <div class="step-head">
+        <span class="step-n">00</span>
+        <div><p class="step-title">Conferir a Bronze da aula 2</p><p class="step-sub">Um comando no SQL editor, antes de começar</p></div>
+      </div>
+      <div class="step-body">
+        <p class="cmdlabel">Rode no SQL editor</p>
+        <div class="codewrap"><pre>SELECT count(*)             AS linhas,
+       sum(size(features))  AS eventos
+FROM sismos.bronze.terremotos_raw;</pre><button class="copy" type="button">copiar</button></div>
+        <div class="verify"><p class="vh">Deu certo se</p><p><code>12</code> e <code>29265</code> (ou perto disso, se você extraiu da API num dia diferente). Se der <code>TABLE_OR_VIEW_NOT_FOUND</code>, a Bronze não existe: importe e rode o <a href="aula-2.html#pratica-bronze"><code>02_bronze</code></a> antes. Se nem a landing existe, o <a href="aula-1.html#plano-b">plano B</a> resolve em dois minutos.</p></div>
+        <div class="note"><b>Usou o catálogo <code>workspace</code>?</b> Onde este guia e os notebooks disserem <code>sismos.</code>, troque por <code>workspace.</code>. O resto é igual.</div>
+        <label class="mark"><input type="checkbox" id="chk-a3s0"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="bronze-unica">
+    <h2>01 &middot; Correção do desafio 2</h2>
+    <p class="h2big">Uma Bronze por tópico, a fonte é parâmetro</p>
+    <p>O desafio pedia para levar o EMSC até a Bronze <strong>sem copiar os notebooks</strong>. O caminho natural é o contrário: duplicar o <code>02_bronze</code>, trocar três strings e chamar de <code>02_bronze_EU</code>. Funciona na primeira semana e diverge na segunda. Alguém corrige o retry num e esquece o outro, a terceira fonte vira o terceiro notebook, e o Job passa a ter um código diferente por fonte para fazer a mesma coisa.</p>
+
+    <div class="versus">
+      <div class="vs-card bad">
+        <p class="vs-h">O que foi feito</p>
+        <p class="vs-flow">01_extract &middot; 02_bronze<br>01_extract_EU &middot; 02_bronze_EU<br>&nbsp;&nbsp;um par de notebooks por fonte</p>
+        <p>Mesma lógica em dois lugares. A diferença entre as fontes fica espalhada pelo código, e às vezes vem junto o mesmo checkpoint, copiado com o resto.</p>
+      </div>
+      <div class="vs-card good">
+        <p class="vs-h">O certo</p>
+        <p class="vs-flow">bronze_ingestao<br>&nbsp;&nbsp;fonte=usgs &middot; fonte=emsc &middot; fonte=...</p>
+        <p><strong>Um notebook de Bronze para tudo do mesmo tópico.</strong> Extração e carga são funções genéricas. O que muda entre as fontes mora num dicionário de configuração, e a fonte entra como parâmetro: widget no notebook, task no Job.</p>
+      </div>
+    </div>
+
+    <h3>Mesmo padrão, outro contrato</h3>
+    <p>As duas APIs seguem o FDSN, mas o contrato muda nos detalhes. Cada linha da tabela abaixo vira uma chave do dicionário <code>FONTES</code> ou uma decisão no código genérico:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th></th><th>USGS</th><th>EMSC</th><th>No bronze_ingestao</th></tr></thead>
+        <tbody>
+          <tr><td><code>format</code></td><td class="term">geojson</td><td><code>json</code>. Sem ele, o <code>/count</code> responde <b>XML</b></td><td>chave <code>format</code></td></tr>
+          <tr><td><code>/count</code></td><td class="term">{count, maxAllowed}</td><td>só <code>{count}</code></td><td><code>get("maxAllowed", cfg["limite"])</code></td></tr>
+          <tr><td>pedido grande demais</td><td class="term">400</td><td class="term">413</td><td>os dois são 4xx: falha na hora, sem retry</td></tr>
+          <tr><td><code>endtime=2025-08-01</code></td><td>até 01/08 00:00</td><td><b>inclui o dia 01/08 inteiro</b>: julho dá 7.289, e não 7.007</td><td>janela sempre com hora, <code>T00:00:00</code></td></tr>
+          <tr><td>id &middot; revisão</td><td><code>id</code> &middot; <code>updated</code> em ms</td><td><code>unid</code> &middot; <code>lastupdate</code> em texto ISO</td><td>nada: a Bronze guarda como veio. É problema da Silver</td></tr>
+          <tr><td>tipo &middot; lugar</td><td><code>type</code> &middot; <code>place</code></td><td><code>evtype=ke</code> &middot; <code>flynn_region</code></td><td>idem</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>As contagens não batem, e nenhuma está errada</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>mês</th><th style="text-align:right">USGS</th><th style="text-align:right">EMSC</th><th>mês</th><th style="text-align:right">USGS</th><th style="text-align:right">EMSC</th></tr></thead>
+        <tbody>
+          <tr><td>01</td><td class="num">2.258</td><td class="num">5.961</td><td>07</td><td class="num">4.181</td><td class="num">7.007</td></tr>
+          <tr><td>02</td><td class="num">2.186</td><td class="num">7.482</td><td>08</td><td class="num">3.082</td><td class="num">7.350</td></tr>
+          <tr><td>03</td><td class="num">2.238</td><td class="num">6.140</td><td>09</td><td class="num">2.349</td><td class="num">6.474</td></tr>
+          <tr><td>04</td><td class="num">2.141</td><td class="num">6.258</td><td>10</td><td class="num">2.016</td><td class="num">6.913</td></tr>
+          <tr><td>05</td><td class="num">2.022</td><td class="num">6.195</td><td>11</td><td class="num">1.948</td><td class="num">6.398</td></tr>
+          <tr><td>06</td><td class="num">2.010</td><td class="num">5.658</td><td>12</td><td class="num">2.890</td><td class="num">7.656</td></tr>
+          <tr><td colspan="3"></td><td><b>total</b></td><td class="num"><b>29.321</b></td><td class="num"><b>79.492</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Extração de 23/11/2026. O USGS e o EMSC continuam revisando 2025, então o seu número pode diferir em algumas unidades. O que precisa bater é cada mês com o <code>metadata.count</code> da própria resposta.</p>
+    <p>O EMSC tem quase o triplo. Não é erro de nenhum dos dois: cada catálogo agrega as redes sismográficas que tem, e o EMSC recebe as redes regionais da Europa e do Mediterrâneo, que registram muito terremoto pequeno de magnitude 2,5 a 3 que o USGS não cataloga fora dos EUA. A pergunta certa não é "qual está certo", e sim "certo para quê". Casar os dois catálogos evento a evento é o desafio 3.</p>
+
+    <h3>A armadilha do checkpoint</h3>
+    <p>O checkpoint é a memória de <em>uma</em> consulta de streaming: quais arquivos ela já viu e com que schema. Testado no Free Edition: a carga do EMSC com um checkpoint novo funciona. Depois, a carga do USGS <b>com o mesmo checkpoint</b> falha com <code>LOCATION_OVERLAP</code>, e o arquivo citado no erro é <code>emsc/ano=2025/mes=11.geojson</code>, e não um do USGS. A consulta nova herdou a memória da outra fonte. Fora do Unity Catalog, isso pode passar calado: arquivo tratado como já lido, schema de uma fonte aplicado à outra. E não tem conserto fino: só apagando o checkpoint, o que obriga a reprocessar tudo.</p>
+    <p>Por isso o <code>bronze_ingestao</code> não deixa ninguém escolher o checkpoint. Landing e checkpoint saem do mesmo par <code>&lt;tópico&gt;/&lt;fonte&gt;</code>, e a tabela, de <code>&lt;fonte&gt;_raw</code>:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Derivado da fonte</th><th>fonte=usgs</th><th>fonte=emsc</th></tr></thead>
+        <tbody>
+          <tr><td>landing</td><td class="term">landing/terremotos/usgs/ano=2025/</td><td class="term">landing/terremotos/emsc/ano=2025/</td></tr>
+          <tr><td>checkpoint</td><td class="term">checkpoints/terremotos/usgs</td><td class="term">checkpoints/terremotos/emsc</td></tr>
+          <tr><td>tabela</td><td class="term">bronze.usgs_raw</td><td class="term">bronze.emsc_raw</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b>E na Silver?</b> O notebook continua um só, com <code>fonte</code> como parâmetro, mas a tradução muda de lado: cada fonte tem nomes de campo e formatos de data próprios, e conciliar isso é justamente o trabalho da Silver. Uma função de tradução por fonte, e as duas chegam ao mesmo contrato de colunas, na mesma tabela. É a <a href="#silver">seção 03</a>.</div>
+
+    <article class="step" data-id="a3b1" id="pratica-bronze-unica">
+      <div class="step-head">
+        <span class="step-n">01</span>
+        <div><p class="step-title">Trocar <code>01_extract</code> e <code>02_bronze</code> pelo <code>bronze_ingestao</code></p><p class="step-sub">Importar, migrar a landing, rodar as duas fontes e apagar os antigos</p></div>
+      </div>
+      <div class="step-body">
+        <p class="cmdlabel">1 &middot; Trazer o notebook</p>
+        <ol class="body">
+          <li>Baixe o <a href="https://github.com/ckoliveiraa/lakehouse-sismico/blob/main/notebooks/bronze_ingestao.py" target="_blank" rel="noopener"><strong>bronze_ingestao.py</strong></a> do repositório.</li>
+          <li>No Databricks, em <b>Workspace</b>, entre na pasta <code>lakehouse-sismico</code>, clique nos três pontinhos (<b>&#8942;</b>), escolha <b>Import</b> e arraste o arquivo.</li>
+        </ol>
+
+        <p class="cmdlabel">2 &middot; Migrar para o layout novo: rode uma vez, numa célula nova</p>
+        <p>A landing passa de <code>terremotos/ano=2025/</code> para <code>terremotos/usgs/ano=2025/</code>. Como a origem mudou, tabela e checkpoint da aula 2 não servem mais e saem <b>juntos</b>. A tabela do USGS volta com o nome no padrão <code>&lt;fonte&gt;_raw</code>: <code>usgs_raw</code>. Vale para quem extraiu da API e para quem usou o plano B.</p>
+        <div class="codewrap"><pre>L = "/Volumes/sismos/bronze/landing"
+C = "/Volumes/sismos/bronze/checkpoints"
+
+def existe(p):
+    try: dbutils.fs.ls(p); return True
+    except Exception: return False
+
+if existe(f"{L}/terremotos/ano=2025"):
+    dbutils.fs.mv(f"{L}/terremotos/ano=2025", f"{L}/terremotos/usgs/ano=2025", recurse=True)
+
+for tabela in ("terremotos_raw", "emsc_raw"):
+    spark.sql(f"DROP TABLE IF EXISTS sismos.bronze.{tabela}")
+    dbutils.fs.rm(f"{C}/{tabela}", recurse=True)</pre><button class="copy" type="button">copiar</button></div>
+        <p>Se no desafio você usou outro checkpoint para o EMSC, apague-o também.</p>
+
+        <p class="cmdlabel">3 &middot; Rodar as duas fontes pelo mesmo notebook</p>
+        <ol class="body">
+          <li>No topo do notebook, widgets <code>fonte = usgs</code> e <code>extrair = nao</code>: os arquivos já estão na landing. <b>Run all</b>.</li>
+          <li>Troque para <code>fonte = emsc</code> e <code>extrair = sim</code>. <b>Run all</b>. São 12 chamadas ao EMSC, uns dois minutos.</li>
+          <li>Rode <code>fonte = emsc</code> de novo: <code>nesta execução: 0 linhas</code>.</li>
+        </ol>
+
+        <p class="cmdlabel">4 &middot; Apagar os antigos</p>
+        <p>No Workspace, apague <code>01_extract</code>, <code>02_bronze</code> e qualquer cópia que você fez para o EMSC. Eles continuam no repositório como gabarito da aula 2, mas daqui para frente a Bronze de terremotos é <b>um</b> notebook.</p>
+
+        <div class="verify"><p class="vh">Deu certo se</p><p>No SQL editor, <code>SELECT count(*), sum(size(features)) FROM sismos.bronze.usgs_raw</code> dá <code>12</code> e uns 29 mil, e o mesmo em <code>emsc_raw</code> dá <code>12</code> e uns 79 mil. Em <code>_source_file</code>, os caminhos já são <code>.../landing/terremotos/usgs/...</code> e <code>.../terremotos/emsc/...</code>.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-a3b1"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="bundles">
+    <h2>02 &middot; O workspace como código</h2>
+    <p class="h2big">Bundles e CLI: a porta para agentes</p>
+    <p>Até aqui, tudo foi clicado: importar notebook, criar Job, trocar widget, apertar <b>Run all</b>. Clique não tem histórico, não passa por revisão e não se repete igual no workspace do colega. E tem um motivo novo: <strong>agente não clica bem</strong>. Um agente de código, como o Claude Code, o Cursor ou o Copilot, trabalha pelo terminal: lê arquivos, roda comandos, lê o erro e tenta de novo. Para ele operar o Databricks, o Databricks precisa caber num terminal.</p>
+
+    <div class="versus">
+      <div class="vs-card good">
+        <p class="vs-h">Databricks CLI</p>
+        <p class="vs-flow">databricks &lt;comando&gt; -p &lt;perfil&gt;</p>
+        <p>A API inteira do workspace no terminal: tabelas, volumes, jobs, SQL. A autenticação fica num <b>perfil</b> em <code>~/.databrickscfg</code>, e o token nunca aparece no código nem no prompt do agente.</p>
+      </div>
+      <div class="vs-card good">
+        <p class="vs-h">Bundle</p>
+        <p class="vs-flow">databricks.yml &rarr; validate &rarr; deploy &rarr; run</p>
+        <p>Um arquivo YAML no repositório descreve o que existe no workspace: Jobs, tasks, parâmetros e notebooks. O <code>deploy</code> faz o workspace ficar igual ao arquivo, e rodar de novo não duplica nada.</p>
+      </div>
+    </div>
+
+    <p>O Job do projeto é este arquivo na raiz do repositório. Abaixo, a parte da Bronze. Repare: duas tasks, o <b>mesmo</b> notebook, e só o parâmetro <code>fonte</code> muda. O arquivo completo tem mais três tasks, Silver do USGS, Silver do EMSC e Gold, que são as próximas seções da aula.</p>
+    <div class="codewrap"><pre>bundle:
+  name: lakehouse-sismico
+
+resources:
+  jobs:
+    pipeline_terremotos:
+      name: pipeline_terremotos
+      parameters:
+        - name: ano
+          default: "2025"
+        - name: extrair
+          default: "sim"
+      tasks:
+        - task_key: bronze_usgs
+          notebook_task:
+            notebook_path: ./notebooks/bronze_ingestao.py
+            base_parameters: { fonte: usgs }
+        - task_key: bronze_emsc
+          notebook_task:
+            notebook_path: ./notebooks/bronze_ingestao.py
+            base_parameters: { fonte: emsc }
+        # silver_usgs, silver_emsc e gold: seções 03 a 05
+
+targets:
+  dev:
+    mode: development
+    default: true</pre><button class="copy" type="button">copiar</button></div>
+    <p>Sem <code>cluster</code> declarado, as tasks rodam em serverless, que é o que o Free Edition oferece. O <code>mode: development</code> põe o prefixo <code>[dev seu_nome]</code> no Job e isola o deploy na sua pasta, para dois alunos não pisarem um no outro. O host do workspace não está no arquivo: vem do perfil (<code>-p</code>), e o repositório pode ser público.</p>
+
+    <h3>Por que isso é a conexão com agentes</h3>
+    <ul class="body">
+      <li><b>Mesmos comandos, mesmo resultado.</b> O que você roda no terminal, o agente roda igual. Não tem tela que mudou de lugar.</li>
+      <li><b>Erro legível.</b> <code>bundle validate</code> e a saída do <code>run</code> são texto: o agente lê, corrige o YAML ou o notebook e roda de novo.</li>
+      <li><b>Revisável.</b> O agente muda o <code>databricks.yml</code> e o notebook no git. Você lê o diff antes do <code>deploy</code>.</li>
+      <li><b>Com limite.</b> O agente herda as permissões do perfil que ele usa. Em dev, é você. Em produção, é uma <i>service principal</i> com só o necessário: assunto da aula 4.</li>
+    </ul>
+
+    <article class="step" data-id="a3b2" id="pratica-bundle">
+      <div class="step-head">
+        <span class="step-n">02</span>
+        <div><p class="step-title">Conectar e publicar pelo terminal</p><p class="step-sub">Instalar a CLI, autenticar, ler o workspace e publicar o Job sem clicar</p></div>
+      </div>
+      <div class="step-body">
+        <p class="cmdlabel">1 &middot; Instalar a CLI (uma das três)</p>
+        <div class="codewrap"><pre># Windows
+winget install Databricks.DatabricksCLI
+# macOS
+brew tap databricks/tap &amp;&amp; brew install databricks
+# Linux
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh</pre><button class="copy" type="button">copiar</button></div>
+
+        <p class="cmdlabel">2 &middot; Autenticar: abre o navegador, você aprova, e o perfil fica salvo</p>
+        <div class="codewrap"><pre>databricks auth login --host https://&lt;seu-workspace&gt;.cloud.databricks.com --profile lakehouse
+databricks current-user me -p lakehouse</pre><button class="copy" type="button">copiar</button></div>
+        <p>O host é o começo da URL do seu workspace, até o <code>.com</code>.</p>
+
+        <p class="cmdlabel">3 &middot; Ler o workspace pela CLI</p>
+        <div class="codewrap"><pre>databricks tables list sismos bronze -p lakehouse
+databricks warehouses list -p lakehouse</pre><button class="copy" type="button">copiar</button></div>
+
+        <p class="cmdlabel">4 &middot; Clonar, validar e publicar</p>
+        <div class="codewrap"><pre>git clone https://github.com/ckoliveiraa/lakehouse-sismico.git
+cd lakehouse-sismico
+databricks bundle validate -p lakehouse
+databricks bundle deploy   -p lakehouse</pre><button class="copy" type="button">copiar</button></div>
+        <p>O <code>deploy</code> publica os notebooks e cria o Job, mas não roda nada. Rodar fica para o fim da aula, no passo 08: até lá, a gente constrói à mão o que as tasks de Silver e Gold fazem.</p>
+
+        <p class="cmdlabel">5 &middot; Pedir a um agente</p>
+        <p>Com a CLI autenticada, um agente de código no mesmo terminal faz o resto. Um bom primeiro pedido, que só lê:</p>
+        <div class="codewrap"><pre>Usando a Databricks CLI com o perfil "lakehouse" e o SQL warehouse do
+workspace, me mostre, por mês, quantos eventos têm sismos.bronze.usgs_raw
+e sismos.bronze.emsc_raw, lado a lado. Só leitura: não altere nada.</pre><button class="copy" type="button">copiar</button></div>
+
+        <div class="verify"><p class="vh">Deu certo se</p><p>O <code>current-user me</code> mostra o seu e-mail, o <code>tables list</code> mostra <code>usgs_raw</code> e <code>emsc_raw</code>, e o <code>deploy</code> termina sem erro. Em <b>Jobs &amp; Pipelines</b> aparece <code>[dev seu_nome] pipeline_terremotos</code>. Abra e veja o desenho das cinco tasks: as duas Bronze em paralelo, e a Silver do EMSC esperando a do USGS.</p></div>
+        <div class="note"><b>Windows com Git Bash?</b> O Git Bash converte argumentos que começam com <code>/</code> em caminhos do Windows, e comandos como <code>databricks workspace list /Users/...</code> ou <code>databricks api get /api/...</code> quebram com <code>Not Found</code>. Prefixe com <code>MSYS_NO_PATHCONV=1</code>, ou use o PowerShell. Token vencido dá <code>refresh token is invalid</code>: rode o <code>auth login</code> de novo.</div>
+        <label class="mark"><input type="checkbox" id="chk-a3b2"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="silver">
+    <h2>03 &middot; A camada do meio</h2>
+    <p class="h2big">O que a Silver promete</p>
+    <p>Cada camada garante uma coisa diferente. A Bronze garante <strong>fidelidade</strong>: é o que a fonte disse, sem retoque. A Gold garante <strong>resposta</strong>: uma pergunta de negócio, pronta para consultar. A Silver fica no meio e garante que o dado está <strong>limpo e confiável</strong>, sem ainda saber que pergunta vão fazer a ele. Na prática, são quatro promessas:</p>
+
+    <div class="promessas">
+      <div class="promessa"><span class="pn">1 &middot; GRÃO</span><h4>Uma linha por evento</h4><p>O array <code>features</code> vira linhas. A chave é o par <code>(fonte, id)</code>: cada catálogo tem o seu <code>id</code>.</p></div>
+      <div class="promessa"><span class="pn">2 &middot; TIPO</span><h4>Nomes, tipos e unidades escolhidos</h4><p>Milissegundos do USGS e texto ISO do EMSC viram o mesmo <code>TIMESTAMP</code> em UTC. As duas fontes, um contrato só.</p></div>
+      <div class="promessa"><span class="pn">3 &middot; ESCOPO</span><h4>Uma decisão escrita sobre o que fica</h4><p>Explosão de mina fica, sai ou ganha coluna? Com o número de linhas antes e depois.</p></div>
+      <div class="promessa"><span class="pn">4 &middot; VERSÃO</span><h4>Só a revisão mais nova</h4><p><code>MERGE</code> por <code>(fonte, id)</code>: evento novo entra, revisão nova atualiza, versão velha é ignorada.</p></div>
+    </div>
+
+    <h3>Grão: explodir o array</h3>
+    <p><strong>Grão</strong> é a resposta para "o que é uma linha desta tabela?". Na Bronze, uma linha é uma resposta da API, e julho inteiro mora numa célula só. Para contar, filtrar ou juntar eventos, o grão precisa ser o evento. A função <code>explode</code> faz essa troca: recebe um array e devolve uma linha para cada elemento, repetindo as outras colunas que você levar junto.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 222" role="img" aria-label="Explode: a linha de julho da Bronze, com um array de 4.181 eventos, vira 4.181 linhas na Silver, uma por evento, com id, horário em UTC e magnitude. As doze linhas da Bronze viram 29.265.">
+        <defs>
+          <marker id="ax" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+        <g font-family="Archivo, sans-serif">
+          <text x="133" y="18" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">BRONZE &#183; 1 LINHA POR RESPOSTA</text>
+          <text x="536" y="18" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">SILVER &#183; 1 LINHA POR EVENTO</text>
+
+          <rect x="8" y="30" width="250" height="172" rx="10" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="22" y="54" font-size="12" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">usgs_raw</text>
+          <rect x="18" y="70" width="230" height="26" rx="5" fill="var(--sunken)"/>
+          <text x="28" y="87" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">mes=06 &#183; features[2.010]</text>
+          <rect x="18" y="102" width="230" height="26" rx="5" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="28" y="119" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" fill="var(--amber)">mes=07 &#183; features[4.181]</text>
+          <rect x="18" y="134" width="230" height="26" rx="5" fill="var(--sunken)"/>
+          <text x="28" y="151" font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-3)">mes=08 &#183; features[3.082]</text>
+          <text x="28" y="186" font-size="11" fill="var(--ink-3)">&#8942; 12 linhas no total</text>
+
+          <line x1="262" y1="115" x2="352" y2="115" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ax)"/>
+          <text x="306" y="106" text-anchor="middle" font-size="11" font-weight="600" font-family="JetBrains Mono, monospace" fill="var(--accent)">explode</text>
+
+          <rect x="360" y="30" width="352" height="172" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.2"/>
+          <g font-size="9.5" letter-spacing="1" fill="var(--ink-3)">
+            <text x="374" y="52">ID</text><text x="476" y="52">EVENTO_EM (UTC)</text><text x="664" y="52">MAG</text>
+          </g>
+          <line x1="370" y1="60" x2="702" y2="60" stroke="var(--line)"/>
+          <g font-size="11" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">
+            <text x="374" y="80">us7000qc1d</text><text x="476" y="80">2025-07-01 00:06:55</text><text x="664" y="80">4.6</text>
+            <text x="374" y="102" fill="var(--ink-3)">&#8942;</text>
+            <rect x="368" y="110" width="336" height="22" rx="4" fill="var(--amber-soft)"/>
+            <text x="374" y="125" fill="var(--amber)" font-weight="600">us6000qw60</text><text x="476" y="125" fill="var(--amber)">2025-07-29 23:24:52</text><text x="664" y="125" fill="var(--amber)" font-weight="600">8.8</text>
+            <text x="374" y="150" fill="var(--ink-3)">&#8942;</text>
+          </g>
+          <text x="374" y="186" font-size="11.5" font-weight="600" fill="var(--accent)">4.181 linhas, uma por evento de julho</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">A linha de julho vira 4.181. As doze linhas da Bronze viram 29.265, e a soma tem que bater com o <code>sum(size(features))</code> da aula 2.</p>
+    </div>
+
+    <h3>Tipo: cada coluna é uma decisão</h3>
+    <p>O Auto Loader leu a Bronze com <code>inferColumnTypes</code>: ele olhou o JSON e <em>adivinhou</em> os tipos. Funciona, mas o palpite muda se o dado mudar. Se um dia o USGS mandar a magnitude <code>5</code> em vez de <code>5.0</code>, o palpite pode mudar junto. A Silver não fica à mercê disso: ela declara o schema num <code>CREATE TABLE</code> e converte cada campo explicitamente. É o <strong>contrato</strong> da camada, e quem consome sabe o que esperar.</p>
+    <div class="tablewrap wrapterm">
+      <table>
+        <thead><tr><th style="width:27%">Na API</th><th style="width:27%">Na Silver</th><th>A decisão</th></tr></thead>
+        <tbody>
+          <tr><td class="term">properties.time</td><td class="term">evento_em TIMESTAMP</td><td>Vem em milissegundos desde 01/01/1970, em UTC. <code>timestamp_millis</code> traduz, uma vez só, aqui.</td></tr>
+          <tr><td class="term">properties.updated</td><td class="term">atualizado_em TIMESTAMP</td><td>A data da última revisão. É ela que decide o <code>MERGE</code>.</td></tr>
+          <tr><td class="term">geometry.coordinates[0]</td><td class="term">longitude DOUBLE</td><td rowspan="3">O GeoJSON manda um array na ordem <strong>longitude, latitude, profundidade</strong>. Dar nome a cada posição evita que alguém troque latitude por longitude no mapa.</td></tr>
+          <tr><td class="term">geometry.coordinates[1]</td><td class="term">latitude DOUBLE</td></tr>
+          <tr><td class="term">geometry.coordinates[2]</td><td class="term">profundidade_km DOUBLE</td></tr>
+          <tr><td class="term">properties.tsunami</td><td class="term">tsunami BOOLEAN</td><td>Número que só pode ser 0 ou 1 é booleano disfarçado. E o comentário da coluna avisa: é a flag de "evento grande em região oceânica", e <em>não</em> quer dizer que houve tsunami.</td></tr>
+          <tr><td class="term">properties.mag, magType</td><td class="term">magnitude, tipo_magnitude</td><td>Nomes em português, no padrão do projeto. Os 26 campos do USGS viram 16 colunas, mais a <code>fonte</code>: o que ninguém vai usar (<code>tz</code>, sempre nulo; <code>detail</code>; <code>types</code>) fica só na Bronze, que continua lá se alguém precisar.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note"><b>Por que UTC?</b> O terremoto de Kamchatka aconteceu em <code>2025-07-29 23:24:52</code> UTC. Em Kamchatka, que é UTC+12, já era 11h24 do dia 30. Se a Silver guardasse hora local, o mesmo evento teria duas datas dependendo de quem lê, e "terremotos de julho" daria um número diferente em cada fuso. A regra é guardar em UTC e converter só na consulta, para quem precisar.</div>
+
+    <h3>Duas fontes, um contrato</h3>
+    <p>A tabela acima é a tradução do USGS. O EMSC chega na <strong>mesma</strong> tabela, com as mesmas colunas, mas cada uma vem de outro lugar e às vezes em outro formato. O notebook tem uma função por fonte, <code>normalizar_usgs</code> e <code>normalizar_emsc</code>, e o resto do código (escopo, deduplicação, <code>MERGE</code>, conferências) é um só. No fim da tradução, um <code>select(*COLUNAS)</code> com as colunas lidas da própria tabela garante o contrato: se uma função esquecer uma coluna, o erro aparece ali, e não no <code>MERGE</code>.</p>
+    <div class="tablewrap wrapterm">
+      <table>
+        <thead><tr><th style="width:20%">Na Silver</th><th style="width:30%">USGS</th><th>EMSC</th></tr></thead>
+        <tbody>
+          <tr><td class="term">fonte</td><td class="term">'usgs'</td><td class="term">'emsc'</td></tr>
+          <tr><td class="term">evento_em</td><td><code>time</code> em ms &rarr; <code>timestamp_millis</code></td><td><code>time</code> em texto ISO, <code>2025-07-29T23:24:51.44Z</code> &rarr; <code>to_timestamp</code></td></tr>
+          <tr><td class="term">atualizado_em</td><td><code>updated</code> em ms</td><td><code>lastupdate</code> em texto ISO</td></tr>
+          <tr><td class="term">longitude, latitude</td><td><code>geometry.coordinates[0]</code>, <code>[1]</code></td><td><code>properties.lon</code>, <code>lat</code></td></tr>
+          <tr><td class="term">profundidade_km</td><td><code>coordinates[2]</code>, positiva para baixo</td><td><code>properties.depth</code>. <b>Não</b> o <code>coordinates[2]</code>: no EMSC ele vem com o sinal trocado</td></tr>
+          <tr><td class="term">lugar</td><td><code>place</code>: <code>140 km E of Petropavlovsk-Kamchatsky, Russia</code></td><td><code>flynn_region</code>: <code>OFF EAST COAST OF KAMCHATKA</code></td></tr>
+          <tr><td class="term">tipo</td><td><code>type</code>: <code>earthquake</code>, <code>mining explosion</code>...</td><td><code>evtype</code> em código: <code>ke</code> e <code>fe</code> viram <code>earthquake</code>, o resto fica <code>emsc:&lt;código&gt;</code></td></tr>
+          <tr><td class="term">rede</td><td><code>net</code></td><td><code>auth</code></td></tr>
+          <tr><td class="term">status, tsunami, significancia, alerta</td><td><code>status</code>, <code>tsunami</code>, <code>sig</code>, <code>alert</code></td><td>Não existem. Ficam <b>nulos</b>, e o <code>COMMENT</code> da coluna avisa</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>O <code>evtype</code> merece uma frase. São duas letras: a primeira é a certeza (<code>k</code> conhecido, <code>f</code> sentido, <code>s</code> suspeito, <code>u</code> sem confirmação), a segunda é o que foi (<code>e</code> terremoto, <code>i</code> induzido). Traduzir só os de certeza alta para <code>earthquake</code> é a mesma lógica do USGS: o vocabulário é um só, e o que não tem equivalente fica com o código original, à vista. A Gold filtra <code>tipo = 'earthquake'</code> e funciona para as duas fontes sem saber que elas existem.</p>
+
+    <h3>Escopo: o que fica na Silver</h3>
+    <p>Na aula 2, o <code>explode</code> no SQL editor mostrou que nem todo evento é terremoto:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>tipo</th><th style="text-align:right">Eventos</th><th>Onde, principalmente</th></tr></thead>
+        <tbody>
+          <tr><td class="term">earthquake</td><td class="num">29.022</td><td>O mundo todo</td></tr>
+          <tr><td class="term">mining explosion</td><td class="num">232</td><td>Wyoming (201), Utah, Montana: minas a céu aberto nos EUA</td></tr>
+          <tr><td class="term">explosion</td><td class="num">4</td><td rowspan="4">Detonações, deslizamentos e uma erupção, registrados porque o sismógrafo também os sente</td></tr>
+          <tr><td class="term">other event</td><td class="num">4</td></tr>
+          <tr><td class="term">landslide</td><td class="num">2</td></tr>
+          <tr><td class="term">volcanic eruption</td><td class="num">1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="versus">
+      <div class="vs-card bad">
+        <p class="vs-h">Filtrar na Silver</p>
+        <p class="vs-flow">WHERE tipo = 'earthquake'<br>&rarr; 243 eventos somem</p>
+        <p>A Silver passa a responder uma pergunta só. Se amanhã a área de segurança de mineração quiser as explosões, elas não estão em lugar nenhum além da Bronze, e alguém vai ter que refazer o caminho.</p>
+      </div>
+      <div class="vs-card good">
+        <p class="vs-h">Manter, com a coluna tipo</p>
+        <p class="vs-flow">29.265 eventos, coluna tipo<br>&rarr; a Gold filtra</p>
+        <p>A Silver guarda tudo o que a fonte disse, limpo. Cada Gold filtra o que a sua pergunta pede, e o filtro fica escrito na consulta, à vista de quem lê. <strong>É a decisão do curso.</strong></p>
+      </div>
+    </div>
+    <p>No EMSC, a mesma decisão vale para 114 eventos de 79.492: 77 <code>emsc:se</code> (suspeitos), 35 <code>emsc:ue</code> (sem confirmação) e 2 <code>emsc:si</code> (suspeita de induzido). Ficam na Silver, fora da Gold.</p>
+    <p>A regra que sobra: decisão de escopo é <strong>escrita</strong>, com o número de linhas que ela afeta. "Mantivemos os 243 eventos que não são terremoto, com a coluna <code>tipo</code>, e a Gold filtra" é uma frase que alguém consegue questionar na revisão de código. Um <code>WHERE</code> perdido no meio do notebook, não.</p>
+    <div class="note"><b>Olhe o dado antes de escrever a regra.</b> Uma validação "profundidade não pode ser negativa" parece óbvia. Só que 44 eventos do USGS em 2025 têm profundidade negativa, e 31 do EMSC, e não é erro: o USGS mede a partir do nível do mar, e um tremor sob uma montanha pode estar acima dele. A regra óbvia jogaria fora dado bom. O <code>03_silver</code> mostra esses eventos na parte 3.</div>
+  </section>
+
+  <section id="merge">
+    <h2>04 &middot; A versão</h2>
+    <p class="h2big">MERGE: atualizar sem duplicar</p>
+    <p>As fontes revisam os eventos depois de publicar. Um terremoto entra como <code>automatic</code>, com a estimativa do computador, e dias depois um sismólogo confere e corrige a magnitude, a profundidade, às vezes o lugar. O <code>id</code> continua o mesmo, o <code>updated</code> muda. A Silver precisa refletir isso: cada evento uma vez, na revisão mais nova.</p>
+    <p>Os dois jeitos de gravar da aula 2 não servem. O <code>append</code> duplica o evento a cada revisão. O <code>overwrite</code> recalcula tudo, todo dia, a partir da Bronze inteira, e uma versão velha relida da landing apaga a nova. O que resolve é o <strong>upsert</strong>: atualizar o que existe, inserir o que não existe. No SQL, isso se chama <code>MERGE</code>.</p>
+
+    <div class="fig">
+      <div class="fig-scroll">
+      <svg viewBox="0 0 720 284" role="img" aria-label="Os três casos do MERGE. Um id que a Silver não tem é inserido. Um id que a Silver tem, chegando com revisão mais nova, é atualizado. Um id que a Silver tem, chegando com a mesma revisão ou mais velha, casa, mas a condição é falsa e nada acontece.">
+        <defs>
+          <marker id="am3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--ink-3)"/>
+          </marker>
+        </defs>
+        <g font-family="Archivo, sans-serif">
+          <text x="108" y="22" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">ORIGEM &#183; s</text>
+          <text x="358" y="22" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">O QUE O MERGE FAZ</text>
+          <text x="610" y="22" text-anchor="middle" font-size="10" letter-spacing="1.5" fill="var(--ink-3)">SILVER DEPOIS &#183; t</text>
+
+          <!-- caso 1 -->
+          <rect x="8" y="36" width="200" height="66" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="22" y="62" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">us7000novo</text>
+          <text x="22" y="84" font-size="10.5" fill="var(--ink-3)">a Silver nunca viu este id</text>
+          <text x="358" y="49" text-anchor="middle" font-size="10.5" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">WHEN NOT MATCHED</text>
+          <line x1="214" y1="69" x2="500" y2="69" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#am3)"/>
+          <text x="358" y="90" text-anchor="middle" font-size="12" font-weight="700" fill="var(--accent)">INSERT</text>
+          <rect x="508" y="36" width="204" height="66" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+          <text x="522" y="62" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--accent)">us7000novo</text>
+          <text x="522" y="84" font-size="10.5" fill="var(--accent)">linha nova</text>
+
+          <!-- caso 2 -->
+          <rect x="8" y="118" width="200" height="66" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="22" y="144" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">us6000qw60</text>
+          <text x="22" y="166" font-size="10.5" fill="var(--ink-3)">M 8,9 &#183; revisado hoje</text>
+          <text x="358" y="126" text-anchor="middle" font-size="10.5" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">WHEN MATCHED AND</text>
+          <text x="358" y="140" text-anchor="middle" font-size="10.5" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">s.atualizado_em &gt; t.atualizado_em</text>
+          <line x1="214" y1="151" x2="500" y2="151" stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#am3)"/>
+          <text x="358" y="172" text-anchor="middle" font-size="12" font-weight="700" fill="var(--amber)">UPDATE</text>
+          <rect x="508" y="118" width="204" height="66" rx="8" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="522" y="144" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--amber)">us6000qw60</text>
+          <text x="522" y="166" font-size="10.5" fill="var(--amber)">M 8,8 &#8594; 8,9 &#183; revisão nova</text>
+
+          <!-- caso 3 -->
+          <rect x="8" y="200" width="200" height="66" rx="8" fill="var(--surface)" stroke="var(--line)"/>
+          <text x="22" y="226" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink)">us7000pn9s</text>
+          <text x="22" y="248" font-size="10.5" fill="var(--ink-3)">mesma revisão que a Silver tem</text>
+          <text x="358" y="208" text-anchor="middle" font-size="10.5" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">WHEN MATCHED, mas</text>
+          <text x="358" y="222" text-anchor="middle" font-size="10.5" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">a condição é falsa</text>
+          <line x1="214" y1="233" x2="500" y2="233" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#am3)"/>
+          <text x="358" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink-3)">nada</text>
+          <rect x="508" y="200" width="204" height="66" rx="8" fill="var(--sunken)" stroke="var(--line)"/>
+          <text x="522" y="226" font-size="13" font-weight="700" font-family="JetBrains Mono, monospace" fill="var(--ink-2)">us7000pn9s</text>
+          <text x="522" y="248" font-size="10.5" fill="var(--ink-3)">intocada, nem é reescrita</text>
+        </g>
+      </svg>
+      </div>
+      <p class="fig-cap">Uma instrução, três casos. O terceiro é o que acontece com quase todos os 108 mil eventos todo dia, e é ele que faz a segunda execução não mexer em nada.</p>
+    </div>
+
+    <h3>Anatomia do MERGE</h3>
+    <div class="anat">
+<pre><span class="k">MERGE INTO</span> sismos.silver.eventos <span class="k">AS</span> t
+<span class="k">USING</span> origem <span class="k">AS</span> s
+<span class="hl"><span class="k">ON</span> t.fonte = s.fonte <span class="k">AND</span> t.id = s.id</span>
+<span class="k">WHEN MATCHED</span>
+  <span class="hl"><span class="k">AND</span> s.atualizado_em &gt; t.atualizado_em</span>
+  <span class="k">THEN UPDATE SET</span> *
+<span class="k">WHEN NOT MATCHED</span>
+  <span class="k">THEN INSERT</span> *</pre>
+      <ol>
+        <li><b>t</b> e <b>s</b> &middot; o alvo (<em>target</em>, a Silver) e a origem (<em>source</em>, a Bronze explodida e tipada, registrada como view temporária).</li>
+        <li><b>ON</b> &middot; a chave, <code>(fonte, id)</code>. Diz quando uma linha da origem "é a mesma" que uma da Silver. Sem a <code>fonte</code>, um <code>id</code> do EMSC que por acaso coincidisse com um do USGS sobrescreveria o evento errado. O notebook ainda acrescenta <code>t.fonte = 'usgs'</code> (ou <code>'emsc'</code>): não muda o resultado, mas diz ao Delta que a execução só toca as linhas de uma fonte.</li>
+        <li><b>AND ...</b> &middot; a condição que protege a Silver. Sem ela, todo <code>MERGE</code> reescreveria todas as linhas da fonte, mesmo sem nada ter mudado, e uma versão velha da landing sobrescreveria a revisão nova.</li>
+        <li><b>SET *</b>, <b>INSERT *</b> &middot; todas as colunas, casadas <strong>pelo nome</strong>. A origem precisa ter exatamente as colunas da tabela.</li>
+      </ol>
+    </div>
+
+    <h3>Uma linha por (fonte, id), antes de casar</h3>
+    <p>O <code>MERGE</code> tem uma exigência: cada linha da Silver pode casar com no máximo <strong>uma</strong> linha da origem. Se o mesmo <code>id</code> vier duas vezes, ele não escolhe sozinho e falha com <code>DELTA_MULTIPLE_SOURCE_ROW_MATCHING_TARGET_ROW_IN_MERGE</code>.</p>
+    <p>Hoje a Bronze não tem <code>id</code> repetido. Na aula 4 vai ter: cada carga incremental grava um arquivo novo só com o que mudou, e um evento revisado duas vezes aparece em dois arquivos. Por isso o notebook já resolve antes de precisar, com uma <strong>função de janela</strong>: numera as versões de cada <code>id</code> da mais nova para a mais velha e fica com a número 1.</p>
+    <div class="codewrap"><pre>mais_nova = (Window.partitionBy(<span class="s">"fonte"</span>, <span class="s">"id"</span>)
+                   .orderBy(F.col(<span class="s">"atualizado_em"</span>).desc(), ...))
+
+origem = (eventos
+          .withColumn(<span class="s">"_ordem"</span>, F.row_number().over(mais_nova))
+          .where(<span class="s">"_ordem = 1"</span>)
+          .drop(<span class="s">"_ordem"</span>))</pre></div>
+
+    <h3>Duas coisas que a tabela declara</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>No CREATE TABLE</th><th>O que faz</th></tr></thead>
+        <tbody>
+          <tr><td class="term">PRIMARY KEY (fonte, id)</td><td>Documenta a chave no Unity Catalog: aparece no Catalog Explorer, e ferramentas de BI usam para montar relacionamentos. Mas é <strong>informativa</strong>: o Databricks não impede duplicata por causa dela. Quem impede é o <code>MERGE</code>. É a mesma lição do <code>INSERT</code> duplicado da aula 1.</td></tr>
+          <tr><td class="term">delta.enableChangeDataFeed</td><td>O <strong>Change Data Feed</strong> faz o Delta guardar, a cada versão, o antes e o depois de cada linha alterada. Fica ligado desde hoje porque é ele que vai responder, na aula 4, a quarta pergunta da resseguradora: <em>quanto a primeira estimativa erra</em>. Mudança que acontecer antes de ligar não fica registrada.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Documentação: <a href="https://docs.databricks.com/aws/en/sql/language-manual/delta-merge-into" target="_blank" rel="noopener">MERGE INTO</a>, <a href="https://docs.databricks.com/aws/en/delta/merge" target="_blank" rel="noopener">upsert com MERGE</a>, <a href="https://docs.databricks.com/aws/en/delta/delta-change-data-feed" target="_blank" rel="noopener">Change Data Feed</a> e <a href="https://docs.databricks.com/aws/en/tables/constraints" target="_blank" rel="noopener">constraints</a>.</p>
+
+    <h3>Prática &middot; construir a Silver</h3>
+    <article class="step" data-id="a3s1" id="pratica-silver">
+      <div class="step-head">
+        <span class="step-n">03</span>
+        <div><p class="step-title">Notebook <code>03_silver</code>: a primeira fonte</p><p class="step-sub">Partes 0 a 5 com <code>fonte = usgs</code> &middot; 12 linhas viram 29.265</p></div>
+      </div>
+      <div class="step-body">
+        <p class="cmdlabel">Trazer o notebook para o workspace</p>
+        <ol class="body">
+          <li>Abra o <a href="https://github.com/ckoliveiraa/lakehouse-sismico/blob/main/notebooks/03_silver.py" target="_blank" rel="noopener"><strong>03_silver.py</strong></a> na pasta <a href="https://github.com/ckoliveiraa/lakehouse-sismico/tree/main/notebooks" target="_blank" rel="noopener">notebooks</a> do repositório e clique no botão de download (a setinha para baixo, à direita).</li>
+          <li>No Databricks, em <b>Workspace</b>, entre na pasta <code>lakehouse-sismico</code>, clique nos três pontinhos (<b>&#8942;</b>), escolha <b>Import</b> e arraste o arquivo.</li>
+          <li>Nos widgets do topo, deixe <code>fonte = usgs</code> e troque <code>simular_revisao</code> para <code>sim</code>. A simulação só roda com os dois assim, e o Job nunca liga.</li>
+          <li>Rode as partes 0 a 5, célula por célula (<kbd>Shift+Enter</kbd>), lendo o texto entre elas. As partes 6 a 8 são os próximos passos deste guia, e a segunda fonte é o passo 06.</li>
+        </ol>
+
+        <p class="cmdlabel">O que cada parte do notebook faz</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Parte</th><th>O que acontece</th></tr></thead>
+            <tbody>
+              <tr><td><b>0 &middot; Garantir a estrutura</b></td><td><code>CREATE TABLE IF NOT EXISTS</code> com o schema explícito, um <code>COMMENT</code> por coluna, a chave primária e o Change Data Feed ligado.</td></tr>
+              <tr><td><b>1 &middot; Grão</b></td><td>O <code>explode(features)</code>, com a contagem antes e depois.</td></tr>
+              <tr><td><b>2 &middot; Tipo</b></td><td>As funções <code>normalizar_usgs</code> e <code>normalizar_emsc</code>, que dão nome, tipo e unidade a cada coluna. Roda só a da fonte do widget, e mostra os terremotos de magnitude 8,5 ou mais já traduzidos.</td></tr>
+              <tr><td><b>3 &middot; Escopo</b></td><td>Eventos por <code>tipo</code>, e os com profundidade negativa.</td></tr>
+              <tr><td><b>4 &middot; Uma linha por (fonte, id)</b></td><td>A janela com <code>row_number</code>. Hoje, o mesmo número antes e depois.</td></tr>
+              <tr><td><b>5 &middot; MERGE</b></td><td>A função <code>merge_eventos</code>, que registra a origem como view temporária e roda o <code>MERGE</code>. Mostra quantas linhas foram inseridas e atualizadas.</td></tr>
+              <tr><td><b>6 a 8</b></td><td>Rodar de novo, simular uma revisão e desfazer. São os passos 04 e 05.</td></tr>
+              <tr><td><b>9 &middot; Conferências</b></td><td>Silver contra a Bronze da fonte, e o escopo por escrito: eventos por <code>fonte</code> e <code>tipo</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="cmdlabel">Resultado esperado da parte 5</p>
+        <div class="tablewrap mres">
+          <table>
+            <thead><tr><th>num_affected_rows</th><th>num_updated_rows</th><th>num_deleted_rows</th><th>num_inserted_rows</th></tr></thead>
+            <tbody><tr><td class="num">29265</td><td class="num">0</td><td class="num">0</td><td class="num">29265</td></tr></tbody>
+          </table>
+        </div>
+        <div class="verify"><p class="vh">Deu certo se</p><p>29.265 inseridas, e a parte 9 mostra o mesmo número em <code>eventos_na_bronze</code>, <code>linhas_na_silver</code> e <code>ids_distintos</code>, com zero nulos. Em <b>Catalog</b> &rsaquo; <code>sismos</code> &rsaquo; <code>silver</code> &rsaquo; <code>eventos</code>, a aba <b>Overview</b> mostra os comentários de cada coluna e o par <code>(fonte, id)</code> marcado como chave.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-a3s1"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="a3s2" id="pratica-zero">
+      <div class="step-head">
+        <span class="step-n">04</span>
+        <div><p class="step-title">Rodar de novo: zero linhas mexidas</p><p class="step-sub">Parte 6 &middot; o momento da aula</p></div>
+      </div>
+      <div class="step-body">
+        <p>Rode a célula do <code>MERGE</code> <strong>de novo</strong>, sem mudar nada.</p>
+        <div class="tablewrap mres">
+          <table>
+            <thead><tr><th>num_affected_rows</th><th>num_updated_rows</th><th>num_deleted_rows</th><th>num_inserted_rows</th></tr></thead>
+            <tbody><tr><td class="num" style="color:var(--accent);font-weight:600">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody>
+          </table>
+        </div>
+        <p>Os 29.265 <code>(fonte, id)</code> casaram, e nenhum chegou com <code>atualizado_em</code> mais novo. É o terceiro caso do desenho, para todo mundo. Na Bronze, quem garantiu a idempotência foi o checkpoint. Aqui é a chave mais a condição de versão: <strong>outro mecanismo, a mesma garantia</strong>.</p>
+        <div class="note"><b>Pergunta para a turma: e sem a condição <code>AND s.atualizado_em &gt; t.atualizado_em</code>?</b> O resultado da tabela seria o mesmo, mas o <code>num_updated_rows</code> seria 29.265: todo dia, a Silver inteira reescrita para ficar igual. Num catálogo de 29 mil linhas é desperdício. Num de 29 milhões, é a conta da nuvem do mês.</div>
+        <label class="mark"><input type="checkbox" id="chk-a3s2"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="a3s3" id="pratica-revisao">
+      <div class="step-head">
+        <span class="step-n">05</span>
+        <div><p class="step-title">Uma revisão chegando</p><p class="step-sub">Partes 7 e 8 &middot; simular, ver o antes e o depois, desfazer</p></div>
+      </div>
+      <div class="step-body">
+        <p>Não dá para esperar o USGS revisar um evento durante a aula, então o notebook simula: Kamchatka chega com magnitude <strong>8,9</strong>, revisado agora. Antes, ele anota a versão atual da tabela, para desfazer no fim.</p>
+        <ol class="body">
+          <li><strong>O MERGE da revisão</strong> mostra <code>num_updated_rows = 1</code>.</li>
+          <li><strong>O <code>table_changes</code></strong> lê o Change Data Feed e mostra duas linhas: <code>update_preimage</code> com 8,8 e <code>update_postimage</code> com 8,9. É o antes e o depois, guardados pelo Delta.</li>
+          <li><strong>O MERGE da Bronze inteira, de novo</strong>, como o Job vai fazer todo dia. A Bronze diz 8,8, revisado em outubro de 2026. Resultado: <code>num_updated_rows = 0</code>, e Kamchatka continua 8,9.</li>
+          <li><strong>O <code>RESTORE</code></strong> volta a tabela para a versão anotada, e Kamchatka volta a 8,8.</li>
+        </ol>
+        <div class="verify"><p class="vh">Repare</p><p>No passo 3, a fonte foi relida e a Silver <strong>não</strong> voltou para o valor antigo. A condição de versão não deixa o passado sobrescrever o presente. É por isso que o Job pode reprocessar a Bronze inteira sem medo.</p></div>
+        <p>O último <code>DESCRIBE HISTORY</code> do notebook conta a história toda: o <code>MERGE</code> que inseriu 29.265, o da revisão com 1 atualizada e o <code>RESTORE</code> no fim. O <code>RESTORE</code> não apaga versão: ele cria uma <em>nova</em>, com o conteúdo antigo. Até o desfazer fica registrado. É a viagem no tempo da aula 1, agora consertando um erro de verdade.</p>
+        <div class="note"><b>A célula da simulação disse "simulação desligada"?</b> O widget <code>simular_revisao</code> está em <code>nao</code>, ou a <code>fonte</code> não é <code>usgs</code>. Troque e rode as partes 7 e 8 de novo.</div>
+        <div class="note"><b>Fechou o notebook antes do <code>RESTORE</code>?</b> A variável <code>versao_antes</code> se perdeu, mas o histórico não. Rode <code>DESCRIBE HISTORY sismos.silver.eventos</code>, ache a versão <em>anterior</em> ao <code>MERGE</code> com 1 linha atualizada e rode <code>RESTORE TABLE sismos.silver.eventos TO VERSION AS OF</code> esse número.</div>
+        <label class="mark"><input type="checkbox" id="chk-a3s3"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="a3s5" id="pratica-emsc">
+      <div class="step-head">
+        <span class="step-n">06</span>
+        <div><p class="step-title">A segunda fonte na mesma tabela</p><p class="step-sub">O mesmo <code>03_silver</code>, com <code>fonte = emsc</code></p></div>
+      </div>
+      <div class="step-body">
+        <ol class="body">
+          <li>Nos widgets, troque <code>fonte</code> para <code>emsc</code> e <code>simular_revisao</code> para <code>nao</code>.</li>
+          <li><b>Run all</b>. Repare na parte 2: agora quem roda é a <code>normalizar_emsc</code>, e o Kamchatka aparece com o <code>id</code> do EMSC, 1 segundo antes do USGS.</li>
+          <li>Rode a célula do <code>MERGE</code> de novo: zero, como no USGS.</li>
+        </ol>
+        <div class="tablewrap mres">
+          <table>
+            <thead><tr><th>num_affected_rows</th><th>num_updated_rows</th><th>num_deleted_rows</th><th>num_inserted_rows</th></tr></thead>
+            <tbody><tr><td class="num">79492</td><td class="num">0</td><td class="num">0</td><td class="num">79492</td></tr></tbody>
+          </table>
+        </div>
+        <div class="verify"><p class="vh">Deu certo se</p><p>A parte 9 mostra 79.492 nas três colunas, e a consulta de escopo lista as duas fontes: <code>usgs</code> com 29.022 <code>earthquake</code> e <code>emsc</code> com 79.378. As linhas do USGS não foram tocadas: o <code>DESCRIBE HISTORY</code> mostra o <code>MERGE</code> do EMSC com 79.492 inseridas e zero atualizadas.</p></div>
+        <div class="note"><b>Por que o Job roda uma fonte depois da outra?</b> No <code>databricks.yml</code>, a <code>silver_emsc</code> espera a <code>silver_usgs</code>. Dois <code>MERGE</code> ao mesmo tempo na mesma tabela podem dar <code>ConcurrentAppendException</code>: cada um leu a tabela antes do outro gravar, e o Delta recusa o segundo para não perder dado. Na Bronze, cada fonte tem a sua tabela e as tasks rodam em paralelo. Na Silver, a tabela é uma só.</div>
+        <label class="mark"><input type="checkbox" id="chk-a3s5"> Marcar como feito</label>
+      </div>
+    </article>
+  </section>
+
+  <section id="gold">
+    <h2>05 &middot; A camada de cima</h2>
+    <p class="h2big">Gold: as fontes lado a lado</p>
+    <p>A pergunta da resseguradora, desde a aula 1: <strong>onde o chão treme, com que força, com que frequência, e quanto a primeira estimativa erra</strong>. A Silver tem tudo o que é preciso para as três primeiras, mas ninguém de negócio vai escrever um <code>GROUP BY</code> em 100 mil linhas toda manhã. A Gold entrega a resposta pronta: poucas linhas, nomes que um analista entende, o filtro de escopo aplicado.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Pergunta</th><th>Tabela Gold</th><th>Grão</th></tr></thead>
+        <tbody>
+          <tr><td>Com que frequência?</td><td class="term">gold.terremotos_por_mes</td><td>1 linha por mês e fonte: 24. <b>Em aula</b></td></tr>
+          <tr><td>Com que força?</td><td class="term">gold.terremotos_por_magnitude</td><td>Por grau e fonte. <b>Desafio 3</b></td></tr>
+          <tr><td>Onde?</td><td class="term">gold.terremotos_por_regiao</td><td>Por região e fonte. <b>Desafio 3</b></td></tr>
+          <tr><td>Quanto a 1ª estimativa erra?</td><td colspan="2">Aula 4: precisa do Change Data Feed acumulando revisões por alguns dias</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Aqui, recalcular tudo é a escolha certa</h3>
+    <p>Na Bronze e na Silver, o curso fez de tudo para não reprocessar. Na Gold, as tabelas são recriadas inteiras a cada execução, com <code>CREATE OR REPLACE TABLE ... AS SELECT</code>. Não é contradição: a Gold é <strong>pequena</strong>, dezenas de linhas, e <strong>derivada</strong>, porque tudo o que ela tem dá para refazer a partir da Silver em segundos. Na Bronze, o <code>overwrite</code> jogaria fora o histórico da fonte. Aqui, não há nada a perder, e o Delta ainda guarda as versões anteriores. O <code>CREATE OR REPLACE</code> também é melhor que <code>DROP</code> e <code>CREATE</code>: a tabela nunca deixa de existir no meio, e quem consulta durante a troca vê a versão anterior inteira.</p>
+
+    <h3>Duas fontes na Gold: lado a lado, nunca somadas</h3>
+    <p>A <code>fonte</code> entra no <code>GROUP BY</code> e vira coluna da Gold. Somar USGS e EMSC daria um número sem sentido: o terremoto de Kamchatka está nos dois catálogos e seria contado duas vezes. A Gold guarda uma linha por mês e fonte, o formato certo para guardar. Para <em>ler</em>, um analista quer as fontes em colunas, e o <code>FILTER (WHERE ...)</code> faz isso sem <code>PIVOT</code>:</p>
+    <div class="codewrap"><pre><span class="k">SELECT</span> mes,
+       sum(terremotos) <span class="k">FILTER</span> (<span class="k">WHERE</span> fonte = <span class="s">'usgs'</span>) <span class="k">AS</span> usgs,
+       sum(terremotos) <span class="k">FILTER</span> (<span class="k">WHERE</span> fonte = <span class="s">'emsc'</span>) <span class="k">AS</span> emsc
+<span class="k">FROM</span> sismos.gold.terremotos_por_mes
+<span class="k">GROUP BY</span> mes</pre></div>
+    <p>E aí aparece a lição que a aula 2 só tinha sugerido. <strong>No total</strong>, o EMSC vê quase o triplo: 79 mil contra 29 mil. <strong>Na magnitude 5 ou mais</strong>, os dois ficam perto, uns 2.100 cada no ano. Terremoto grande, a rede global inteira vê. Terremoto pequeno, só quem tem sismógrafo perto, e o EMSC recebe as redes regionais da Europa, do Mediterrâneo e da Indonésia. Contar terremoto pequeno mede <strong>onde há sismógrafo</strong>, e não onde o chão treme. É o <em>viés de detecção</em>, e o desafio 3 vai medi-lo grau a grau.</p>
+    <div class="note"><b>Isso é o trabalho de pleno.</b> "Quantos terremotos teve em julho?" tem duas respostas certas, 4.159 e 7.000, e as duas consultas rodam sem erro. Saber qual usar depende da pergunta, e o <code>COMMENT</code> da tabela é onde se escreve isso: "não some as fontes".</div>
+
+    <h3>Prática &middot; a primeira Gold</h3>
+    <article class="step" data-id="a3s4" id="pratica-gold">
+      <div class="step-head">
+        <span class="step-n">07</span>
+        <div><p class="step-title">Notebook <code>04_gold</code>: terremotos por mês e por fonte</p><p class="step-sub">Só SQL &middot; uma tabela, uma leitura lado a lado e uma conferência</p></div>
+      </div>
+      <div class="step-body">
+        <p>Importe o <a href="https://github.com/ckoliveiraa/lakehouse-sismico/blob/main/notebooks/04_gold.py" target="_blank" rel="noopener"><strong>04_gold.py</strong></a> do mesmo jeito que o <code>03_silver</code> e rode célula por célula. As células são todas SQL: a Gold é onde o analista mora, e o código dela deve ser legível para ele.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Parte</th><th>O que acontece</th></tr></thead>
+            <tbody>
+              <tr><td><b>1 &middot; Por mês e fonte</b></td><td><code>CREATE OR REPLACE TABLE</code> com terremotos, magnitude média e máxima e quantos de 5 ou mais. <code>count_if</code> faz várias contagens numa passada.</td></tr>
+              <tr><td><b>2 &middot; Lado a lado</b></td><td>A leitura com <code>FILTER (WHERE fonte = ...)</code>: uma coluna por fonte.</td></tr>
+              <tr><td><b>3 &middot; Conferências</b></td><td>Por fonte, a Gold soma o mesmo que a Silver filtrada. Se a consulta perdeu linha no caminho, a soma denuncia.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="cmdlabel">Resultado esperado da parte 2 (primeiras linhas)</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>mes</th><th style="text-align:right">usgs</th><th style="text-align:right">emsc</th><th style="text-align:right">usgs_m5</th><th style="text-align:right">emsc_m5</th></tr></thead>
+            <tbody>
+              <tr><td class="term">2025-01-01</td><td class="num">2.239</td><td class="num">5.948</td><td class="num">152</td><td class="num">146</td></tr>
+              <tr><td class="term">2025-02-01</td><td class="num">2.167</td><td class="num">7.471</td><td class="num">129</td><td class="num">135</td></tr>
+              <tr><td class="term">2025-03-01</td><td class="num">2.222</td><td class="num">6.122</td><td class="num">115</td><td class="num">128</td></tr>
+              <tr><td class="term" colspan="5" style="color:var(--ink-3)">&#8942;</td></tr>
+              <tr><td class="term">2025-07-01</td><td class="num">4.159</td><td class="num">7.000</td><td class="num">413</td><td class="num">375</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">Julho tem o maior número de magnitude 5 ou mais nas duas fontes, contra uns 150 de um mês comum: são as réplicas de Kamchatka. Uma média anual esconderia isso.</p>
+
+        <div class="verify"><p class="vh">Deu certo se</p><p>A conferência da parte 3 mostra <code>bate = true</code> nas duas linhas: <strong>29.022</strong> no USGS e <strong>79.378</strong> no EMSC. Em <b>Catalog</b> &rsaquo; <code>sismos</code> &rsaquo; <code>gold</code> &rsaquo; <code>terremotos_por_mes</code>, a aba <b>Lineage</b> mostra <code>silver.eventos</code> como origem, e as duas Bronze antes dela.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-a3s4"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <article class="step" data-id="a3s6" id="pratica-pipeline">
+      <div class="step-head">
+        <span class="step-n">08</span>
+        <div><p class="step-title">O pipeline inteiro, pelo terminal</p><p class="step-sub">As cinco tasks do bundle, sem abrir notebook</p></div>
+      </div>
+      <div class="step-body">
+        <p>Tudo o que você rodou à mão hoje está no Job publicado no passo 02. Agora ele roda sozinho:</p>
+        <div class="codewrap"><pre>databricks bundle deploy -p lakehouse
+databricks bundle run pipeline_terremotos -p lakehouse --params extrair=nao</pre><button class="copy" type="button">copiar</button></div>
+        <p>O <code>--params extrair=nao</code> troca um parâmetro só nesta execução: a Bronze lê a landing que já existe, sem chamar as APIs.</p>
+        <div class="verify"><p class="vh">Deu certo se</p><p><code>TERMINATED SUCCESS</code>, e em <b>Jobs &amp; Pipelines</b> as cinco tasks verdes. Como tudo já tinha sido carregado à mão, nada muda: a Bronze não ganha versão, os dois <code>MERGE</code> da Silver mexem em zero linhas e a Gold é recriada com os mesmos números. É a idempotência das três camadas, de uma vez, e é o que deixa o Job da aula 4 rodar todo dia sem medo.</p></div>
+        <label class="mark"><input type="checkbox" id="chk-a3s6"> Marcar como feito</label>
+      </div>
+    </article>
+
+    <details>
+      <summary>Por que tabela, e não view?</summary>
+      <p>Uma <code>VIEW</code> guarda só a consulta: cada <code>SELECT</code> nela recalcula o <code>GROUP BY</code> sobre a Silver. Está sempre atualizada, mas quem paga o cálculo é quem lê, toda vez. Uma tabela guarda o resultado: a leitura é instantânea, mas ela só muda quando alguém roda o <code>04_gold</code>. Para uma Gold lida por um painel várias vezes ao dia e atualizada uma vez, de madrugada, tabela é a escolha. Quem roda o <code>04_gold</code> todo dia é o Job da aula 4.</p>
+    </details>
+  </section>
+
+  <section id="desafio">
+    <h2>06 &middot; Para casa</h2>
+    <p class="h2big">Desafio 3: as outras perguntas, só em SQL</p>
+    <p>Corrigido ao vivo no começo da aula 4. Como sempre, usa o que foi dado em aula, mas exige um passo que <em>não</em> foi mostrado.</p>
+    <div class="desafios">
+      <article class="desafio">
+        <div class="de-n"><b>03</b>gold</div>
+        <div>
+          <h3>Com que força e onde: as duas Gold que faltam</h3>
+          <p>Crie no seu workspace um notebook novo, <code>05_gold_desafio</code>, com linguagem padrão <b>SQL</b>: nenhuma célula em Python. Ele cria duas tabelas a partir de <code>sismos.silver.eventos</code>, as duas com a <code>fonte</code> no grão, <code>CREATE OR REPLACE</code>, <code>COMMENT</code> explicando a tabela e só <code>tipo = 'earthquake'</code>:</p>
+          <p><code>sismos.gold.terremotos_por_magnitude</code>, com uma linha por grau inteiro de magnitude e por fonte, com quantos terremotos e o percentual que cada grau representa <em>dentro da sua fonte</em>. E <code>sismos.gold.terremotos_por_regiao</code>, com uma linha por região e por fonte, com quantos terremotos, quantos de magnitude 5 ou mais, a magnitude máxima e a profundidade média.</p>
+          <p>O passo que não foi mostrado: <strong>a região está escondida em textos diferentes</strong>. No USGS, o <code>lugar</code> é <code>140 km E of Petropavlovsk-Kamchatsky, Russia</code>, ou <code>2025 Kamchatka Peninsula, Russia Earthquake</code> quando o terremoto ganha nome. No EMSC, é uma região Flinn-Engdahl em maiúsculas, como <code>TARAPACA, CHILE</code> ou <code>OFF EAST COAST OF KAMCHATKA</code>, às vezes abreviada. Você vai precisar de um <code>CASE</code> por fonte, de <code>split</code>, <code>element_at</code> e <code>regexp_replace</code>, e de decidir até onde vale normalizar. E o percentual por fonte pede uma função de janela com <code>PARTITION BY</code>. No fim, o notebook confere: por fonte, as três Gold somam o mesmo que a Silver filtrada.</p>
+          <p class="entrega">Entrega até terça, 01/12, às 19h, véspera da aula 4, no <a href="https://github.com/ckoliveiraa/lakehouse-sismico/issues/new?template=desafio-03.yml" target="_blank" rel="noopener">formulário de entrega</a>: o SQL do notebook; a <code>terremotos_por_magnitude</code> com as fontes lado a lado e a sua leitura da lei de Gutenberg-Richter (cada grau a menos, uns dez vezes mais terremotos: a partir de que grau cada catálogo obedece, e por quê?); o top 5 de regiões por terremotos de magnitude 5 ou mais em cada fonte, com o que você fez para extrair a região; e a conferência das somas.</p>
+        </div>
+      </article>
+    </div>
+    <div class="note" style="margin-top:14px"><b>A Silver precisa das duas fontes.</b> Se a consulta de escopo do <code>03_silver</code> não mostra <code>emsc</code>, volte ao passo 06. Sem a <code>emsc_raw</code> do desafio 2, o passo 01 da aula de hoje cria a tabela.</div>
+  </section>
+
+  <section id="contagens">
+    <h2>A0 &middot; Anexo</h2>
+    <p class="h2big">Contagens esperadas</p>
+    <p>USGS calculado sobre a extração de <strong>06/11/2026</strong>, a mesma do plano B. EMSC sobre a de <strong>23/11/2026</strong>. Uma extração mais nova pode diferir em algumas unidades, porque as duas fontes continuam revisando 2025. O que precisa bater é a Silver com a <em>sua</em> Bronze, e a Gold com a <em>sua</em> Silver.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Silver</th><th style="text-align:right">usgs</th><th style="text-align:right">emsc</th></tr></thead>
+        <tbody>
+          <tr><td class="term">count(*) em silver.eventos</td><td class="num">29.265</td><td class="num">79.492</td></tr>
+          <tr><td class="term">count(DISTINCT id)</td><td class="num">29.265</td><td class="num">79.492</td></tr>
+          <tr><td class="term">tipo = earthquake</td><td class="num">29.022</td><td class="num">79.378</td></tr>
+          <tr><td class="term">tipo &lt;&gt; earthquake</td><td class="num">243</td><td class="num">114</td></tr>
+          <tr><td class="term">status = automatic</td><td class="num">290</td><td class="num">0 (nulo)</td></tr>
+          <tr><td class="term">profundidade_km &lt; 0</td><td class="num">44</td><td class="num">31</td></tr>
+          <tr><td class="term">1º MERGE: inseridas / atualizadas</td><td class="num">29.265 / 0</td><td class="num">79.492 / 0</td></tr>
+          <tr><td class="term">2º MERGE: linhas mexidas</td><td class="num">0</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>mes</th><th style="text-align:right">usgs</th><th style="text-align:right">emsc</th><th style="text-align:right">usgs m5+</th><th style="text-align:right">emsc m5+</th></tr></thead>
+        <tbody>
+          <tr><td class="term">2025-01</td><td class="num">2.239</td><td class="num">5.948</td><td class="num">152</td><td class="num">146</td></tr>
+          <tr><td class="term">2025-02</td><td class="num">2.167</td><td class="num">7.471</td><td class="num">129</td><td class="num">135</td></tr>
+          <tr><td class="term">2025-03</td><td class="num">2.222</td><td class="num">6.122</td><td class="num">115</td><td class="num">128</td></tr>
+          <tr><td class="term">2025-04</td><td class="num">2.113</td><td class="num">6.240</td><td class="num">156</td><td class="num">155</td></tr>
+          <tr><td class="term">2025-05</td><td class="num">2.003</td><td class="num">6.179</td><td class="num">143</td><td class="num">147</td></tr>
+          <tr><td class="term">2025-06</td><td class="num">1.997</td><td class="num">5.649</td><td class="num">118</td><td class="num">121</td></tr>
+          <tr><td class="term">2025-07</td><td class="num">4.159</td><td class="num">7.000</td><td class="num">413</td><td class="num">375</td></tr>
+          <tr><td class="term">2025-08</td><td class="num">3.056</td><td class="num">7.344</td><td class="num">219</td><td class="num">237</td></tr>
+          <tr><td class="term">2025-09</td><td class="num">2.277</td><td class="num">6.469</td><td class="num">195</td><td class="num">198</td></tr>
+          <tr><td class="term">2025-10</td><td class="num">1.998</td><td class="num">6.909</td><td class="num">178</td><td class="num">186</td></tr>
+          <tr><td class="term">2025-11</td><td class="num">1.925</td><td class="num">6.397</td><td class="num">153</td><td class="num">154</td></tr>
+          <tr><td class="term">2025-12</td><td class="num">2.866</td><td class="num">7.650</td><td class="num">158</td><td class="num">165</td></tr>
+          <tr><td class="term"><b>total</b></td><td class="num"><b>29.022</b></td><td class="num"><b>79.378</b></td><td class="num"><b>2.129</b></td><td class="num"><b>2.147</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">As contagens das Gold do desafio 3 saem na correção, no começo da aula 4.</p>
+  </section>
+
+  <section id="erros">
+    <h2>A1 &middot; Anexo</h2>
+    <p class="h2big">Quando quebrar</p>
+
+    <details>
+      <summary><code>LOCATION_OVERLAP</code> no Auto Loader do <code>bronze_ingestao</code></summary>
+      <p>O checkpoint em uso já tem memória de outra origem: uma fonte reaproveitou o checkpoint de outra, ou a landing mudou de pasta e o checkpoint antigo ficou. Rode a célula de migração do passo 01, que apaga tabela e checkpoint juntos, e carregue de novo.</p>
+    </details>
+    <details>
+      <summary><code>refresh token is invalid</code> ou <code>Not Found</code> na CLI</summary>
+      <p>O primeiro é login vencido: <code>databricks auth login --profile lakehouse</code> de novo. O segundo, no Git Bash do Windows, é o caminho <code>/Users/...</code> ou <code>/api/...</code> convertido para <code>C:/Program Files/Git/...</code>: prefixe o comando com <code>MSYS_NO_PATHCONV=1</code>.</p>
+    </details>
+    <details>
+      <summary><code>ConcurrentAppendException</code> no <code>MERGE</code> da Silver</summary>
+      <p>Dois <code>MERGE</code> rodaram ao mesmo tempo na <code>silver.eventos</code>: duas abas do notebook, uma com cada fonte, ou o Job rodando enquanto você testava. Rode de novo, uma fonte de cada vez. O <code>MERGE</code> é atômico: o que falhou não gravou nada pela metade.</p>
+    </details>
+    <details>
+      <summary><code>DELTA_MULTIPLE_SOURCE_ROW_MATCHING_TARGET_ROW_IN_MERGE</code></summary>
+      <p>O mesmo <code>(fonte, id)</code> veio mais de uma vez na origem do <code>MERGE</code>. Confira se a parte 4 rodou e se a função recebeu o <code>origem</code> (deduplicado), e não o <code>eventos</code>.</p>
+    </details>
+    <details>
+      <summary><code>UNRESOLVED_COLUMN</code> ou <code>cannot resolve</code> no <code>UPDATE SET *</code></summary>
+      <p><code>SET *</code> e <code>INSERT *</code> casam colunas pelo nome. Uma coluna da tabela não existe na origem, ou está com outro nome. Compare o <code>DESCRIBE sismos.silver.eventos</code> com o <code>origem.columns</code>. Se você mudou o <code>CREATE TABLE</code> depois de criar a tabela, o <code>IF NOT EXISTS</code> não aplicou a mudança: apague a tabela e rode a parte 0 de novo. É o caso de quem criou a <code>silver.eventos</code> antes de ela ganhar a coluna <code>fonte</code>.</p>
+    </details>
+    <details>
+      <summary>O <code>table_changes</code> falhou dizendo que o Change Data Feed não está habilitado</summary>
+      <p>A tabela foi criada antes, sem o <code>TBLPROPERTIES</code>. Ligue com <code>ALTER TABLE sismos.silver.eventos SET TBLPROPERTIES (delta.enableChangeDataFeed = true)</code> e simule a revisão de novo: o feed registra só o que mudar <em>depois</em> de ligado.</p>
+    </details>
+    <details>
+      <summary>Kamchatka ficou com magnitude 8,9</summary>
+      <p>A simulação rodou e o <code>RESTORE</code> não. Rode a parte 8. Se a variável <code>versao_antes</code> se perdeu, ache no <code>DESCRIBE HISTORY</code> a versão anterior ao <code>MERGE</code> com 1 linha atualizada e use o número dela no <code>RESTORE TABLE ... TO VERSION AS OF</code>.</p>
+    </details>
+    <details>
+      <summary>O <code>CREATE TABLE</code> da Silver reclamou do <code>PRIMARY KEY</code></summary>
+      <p>A chave é informativa e nada no curso depende dela. Apague a linha <code>CONSTRAINT eventos_pk PRIMARY KEY (fonte, id)</code> (e a vírgula da linha anterior) e rode de novo.</p>
+    </details>
+    <details>
+      <summary>Uma Gold veio vazia</summary>
+      <p>Quase sempre é o filtro: <code>tipo = 'Earthquake'</code>, com maiúscula, não casa com nada, porque comparação de texto diferencia maiúsculas. O valor certo é <code>earthquake</code>. A conferência da parte 3 existe para pegar isso: uma fonte com zero denuncia a tabela.</p>
+    </details>
+    <details>
+      <summary>A Gold só tem uma fonte</summary>
+      <p>A Silver só tem uma. O <code>03_silver</code> roda uma fonte por vez: troque o widget para <code>emsc</code> e rode de novo (passo 06), depois o <code>04_gold</code>.</p>
+    </details>
+    <details>
+      <summary>As Gold somam menos que a Silver</summary>
+      <p>Alguma linha ficou de fora do <code>GROUP BY</code>, por exemplo com <code>evento_em</code> nulo. Rode <code>SELECT count_if(evento_em IS NULL) FROM sismos.silver.eventos</code>. Esperado: zero. Se não for, a parte 2 do <code>03_silver</code> foi alterada.</p>
+    </details>
+    <details>
+      <summary>Quero refazer a Silver do zero</summary>
+      <p>A Silver não tem checkpoint: é derivada da Bronze inteira a cada execução. <code>DROP TABLE sismos.silver.eventos</code> e rode o <code>03_silver</code> de novo, uma vez com cada fonte. As Gold se refazem rodando o <code>04_gold</code>.</p>
+    </details>
+    <details>
+      <summary>A computação desligou e não volta</summary>
+      <p>Cota diária do Free Edition. Volta no dia seguinte, e nada se perde: o <code>MERGE</code> e o <code>CREATE OR REPLACE</code> são atômicos, então uma execução interrompida não deixa tabela pela metade.</p>
+    </details>
+  </section>
+
+  <section id="comandos">
+    <h2>A2 &middot; Anexo</h2>
+    <p class="h2big">Comandos</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Comando</th><th>O que é</th></tr></thead>
+        <tbody>
+          <tr><td class="term">databricks auth login --host URL --profile p</td><td>Autentica pelo navegador e salva o perfil em <code>~/.databrickscfg</code></td></tr>
+          <tr><td class="term">databricks bundle validate / deploy -p p</td><td>Confere o <code>databricks.yml</code> e faz o workspace ficar igual a ele</td></tr>
+          <tr><td class="term">databricks bundle run pipeline_terremotos -p p</td><td>Roda o Job do bundle e espera terminar. <code>--params extrair=nao</code> troca um parâmetro só nesta execução</td></tr>
+          <tr><td class="term">dbutils.widgets.get("fonte")</td><td>Lê o parâmetro do notebook: widget no interativo, <code>base_parameters</code> no Job</td></tr>
+          <tr><td class="term">explode(array)</td><td>Uma linha por elemento do array</td></tr>
+          <tr><td class="term">timestamp_millis(n)</td><td>Milissegundos desde 1970 viram <code>TIMESTAMP</code></td></tr>
+          <tr><td class="term">col[0], col[1]</td><td>Elemento de um array, pela posição (começa em 0)</td></tr>
+          <tr><td class="term">row_number() OVER (PARTITION BY ... ORDER BY ...)</td><td>Numera as linhas de cada grupo. Com <code>= 1</code>, fica uma por grupo</td></tr>
+          <tr><td class="term">df.createOrReplaceTempView("origem")</td><td>Dá nome a um DataFrame para usar no SQL, só nesta sessão</td></tr>
+          <tr><td class="term">MERGE INTO t USING s ON ...</td><td>Upsert: atualiza o que casa, insere o que não casa</td></tr>
+          <tr><td class="term">table_changes('tabela', versão)</td><td>O Change Data Feed: antes e depois de cada linha, a partir de uma versão</td></tr>
+          <tr><td class="term">RESTORE TABLE t TO VERSION AS OF n</td><td>Volta o conteúdo para uma versão, criando uma versão nova</td></tr>
+          <tr><td class="term">CREATE OR REPLACE TABLE t AS SELECT</td><td>Recria a tabela com o resultado da consulta, sem ela deixar de existir no meio</td></tr>
+          <tr><td class="term">sum(x) FILTER (WHERE fonte = 'usgs')</td><td>Agrega só as linhas que passam no filtro. Várias numa consulta viram colunas, sem <code>PIVOT</code></td></tr>
+          <tr><td class="term">count_if(condição)</td><td>Conta as linhas em que a condição é verdadeira</td></tr>
+          <tr><td class="term">element_at(split(texto, ', '), -1)</td><td>O último pedaço de um texto separado por vírgulas</td></tr>
+          <tr><td class="term">regexp_replace(texto, padrão, '')</td><td>Apaga o trecho que casa com o padrão. <code>^</code> é o começo, <code>$</code> é o fim</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Referência oficial: <a href="https://docs.databricks.com/aws/en/sql/language-manual/delta-merge-into" target="_blank" rel="noopener">MERGE INTO</a>, <a href="https://docs.databricks.com/aws/en/delta/delta-change-data-feed" target="_blank" rel="noopener">Change Data Feed</a>, <a href="https://docs.databricks.com/aws/en/sql/language-manual/delta-restore" target="_blank" rel="noopener">RESTORE</a>, <a href="https://docs.databricks.com/aws/en/sql/language-manual/functions/explode" target="_blank" rel="noopener">explode</a> e <a href="https://earthquake.usgs.gov/data/comcat/data-eventterms.php" target="_blank" rel="noopener">campos do evento no USGS</a>, <a href="https://docs.databricks.com/aws/en/dev-tools/cli/" target="_blank" rel="noopener">Databricks CLI</a> e <a href="https://docs.databricks.com/aws/en/dev-tools/bundles/" target="_blank" rel="noopener">bundles</a>.</p>
+  </section>
+
+  <footer>
+    Lakehouse Sísmico &middot; Trilha Engenheiro de Dados Pleno &middot; Empregadados &middot; 4 encontros de 1h20.<br>
+    Dados: <a href="https://earthquake.usgs.gov/" target="_blank" rel="noopener">U.S. Geological Survey</a>, domínio público.<br>
+    Seu progresso fica salvo neste navegador.
+  </footer>
+
+</div>
+</main>
+</div>
+
+<script>
+(function(){
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"))
+    .filter(function(s){ return !s.closest("[hidden]"); });
+  var fill = document.getElementById("fill");
+  var pct = document.getElementById("pct");
+  var KEY = "sismos-progresso-aula3";
+
+  function load(){
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}"); }
+    catch(e){ return {}; }
+  }
+  function save(state){
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+  }
+  function paint(){
+    var done = 0;
+    steps.forEach(function(s){
+      var box = s.querySelector("input[type=checkbox]");
+      if (box.checked){ done++; s.classList.add("done"); }
+      else { s.classList.remove("done"); }
+    });
+    pct.textContent = done + "/" + steps.length;
+    fill.style.width = (steps.length ? (done / steps.length * 100) : 0) + "%";
+  }
+
+  var state = load();
+  steps.forEach(function(s){
+    var id = s.getAttribute("data-id");
+    var box = s.querySelector("input[type=checkbox]");
+    box.checked = !!state[id];
+    box.addEventListener("change", function(){
+      state[id] = box.checked;
+      save(state);
+      paint();
+    });
+  });
+  paint();
+
+  document.getElementById("reset").addEventListener("click", function(){
+    state = {};
+    save(state);
+    steps.forEach(function(s){ s.querySelector("input[type=checkbox]").checked = false; });
+    paint();
+  });
+
+  // copiar: tira linhas que são só comentário, como na aula 1
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var pre = btn.parentNode.querySelector("pre");
+      var txt = pre.innerText.split("\n").filter(function(l){ return l.trim().indexOf("#") !== 0; }).join("\n").trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt).then(function(){
+          btn.textContent = "copiado";
+          setTimeout(function(){ btn.textContent = "copiar"; }, 1600);
+        });
+      }
+    });
+  });
+
+  // tema (mesma chave da aula 1: a escolha vale para o site todo)
+  var TKEY = "sismos-tema";
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem(TKEY);
+    if (saved) root.setAttribute("data-theme", saved);
+  } catch(e){}
+  document.getElementById("theme").addEventListener("click", function(){
+    var cur = root.getAttribute("data-theme");
+    if (!cur) cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(TKEY, next); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
